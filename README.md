@@ -1,6 +1,11 @@
 # Insight_Project_Framework
 Framework for machine learning projects at Insight Data Science.
 
+
+## Things to Explore
+- How to handle punctuation? Remove? Replace? 
+- HAVE Named entity as well!!! 
+
 ## Motivation for this project format:
 - **Insight_Project_Framework** : Put all source code for production within structured directory
 - **tests** : Put all source code for testing in an easy to find location
