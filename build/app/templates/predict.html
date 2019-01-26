@@ -1,0 +1,26 @@
+<!doctype html>
+<title>Results</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/my_css.css') }}">
+
+<head>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+
+
+<body>
+
+{{left_text}}
+
+
+{% if file_url %}
+<br>
+<img src="{{ file_url }}">
+{% endif %}
+
+
+{{right_text}}
+
+</body>
+
+

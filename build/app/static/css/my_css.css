@@ -1,0 +1,40 @@
+
+
+
+
+#panel, #flip {
+		    padding: 5px;
+		    text-align: center;
+		    background-color: #e5eecc;
+		    border: solid 1px #c3c3c3;
+}
+
+#panel {
+    padding: 50px;
+    display: none;
+}
+
+
+.initiallyHidden { 
+	display: none; 
+}
+
+
+.answer_panel, .flip {
+		    padding: 5px;
+		    text-align: center;
+		    background-color: #e5eecc;
+		    border: solid 1px #c3c3c3;
+}
+
+.answer_panel {
+    padding: 50px;
+    display: none;
+}
+
+
+code {
+  display: block;
+  white-space: pre-wrap;
+  background-color: gray; 
+}
