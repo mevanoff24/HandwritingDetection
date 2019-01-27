@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import dill as pickle
 import os
-from nltk.tokenize import sent_tokenize
+from nltk.tokenize import sent_tokenize, word_tokenize
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 from collections import defaultdict
@@ -38,36 +38,45 @@ trigram_model_path = os.path.join(DATA_DIR, 'processed/ngram_models/trigram_like
 letters_path = os.path.join(DATA_DIR, 'processed/letters_map.pkl')
 
 
+def tokenize_and_join(context):
+    tokens = word_tokenize(context)
+    context = ' '.join(tokens)
+    return tokens, context
 
-def ngram_backoff_model(sample_index, X, y, trigram_model, bigram_model, OOV_token=0):
-    # get index and target word
-    index = int(y[sample_index][1][0])
-    target = X[sample_index][index]
+def ngram_backoff_model(left_text, right_text, trigram_model, bigram_model, OOV_token=0):
+
+
+    left_tokens, left_text = tokenize_and_join(left_text)
+    right_tokens, right_text = tokenize_and_join(right_text)
+    full_text = left_text + ' [] '  + right_text
+
     # get previous word(s)
     try:
-        prev_word = X[sample_index][index-1]
+        prev_word = left_tokens[-1]
     except:
         prev_word = '<bos>'
     try:
-        prev_prev_word = X[sample_index][index-2]
+        prev_prev_word = left_tokens[-2]
     except:
         prev_prev_word = '<bos>'
     # model preds 
+    print(prev_prev_word, prev_word)
     pred = trigram_model[(prev_prev_word, prev_word)]
+    print('pred1', pred)
     if pred == OOV_token:
         pred = bigram_model[(prev_word)]
+        print('pred2', pred)
         if pred == OOV_token:
             pred = 'UNK'
     return pred 
 
 
-def teseract_baseline(sample_index, y, word_path_mapping, letters, tmpdir='tmp/'):
+def teseract_baseline(file_url, word_path_mapping, letters, tmpdir='tmp/'):
     img_width = 256
     img_height = 100
     # gets image from sample index
-    img = word_path_mapping[y[sample_index][0]]
-    print(img)
-    im = Image.open(img)  # img is the path of the image 
+    # img = word_path_mapping[y[sample_index][0]]
+    im = Image.open(file_url)  # img is the path of the image
     im = im.convert("RGBA")
     im = im.resize((img_width, img_height))
     newimdata = []
@@ -97,27 +106,29 @@ def teseract_baseline(sample_index, y, word_path_mapping, letters, tmpdir='tmp/'
     
     # os.remove(save_img_path)
     # os.rmdir(tmpdir)
-    shutil.rmtree(tmpdir)
+    # shutil.rmtree(tmpdir)
     return text, len(text) 
 
 
     
-def get_ocr_model_pred(sample_index, y, word_path_mapping, letters):
-    ocr_pred, len_pred = teseract_baseline(sample_index, y, word_path_mapping, letters)
+def get_ocr_model_pred(file_url, word_path_mapping, letters):
+    ocr_pred, len_pred = teseract_baseline(file_url, word_path_mapping, letters)
     return ocr_pred, len_pred
 
-def get_language_model_pred(sample_index, X, y, trigram_model, bigram_model):
-    pred = ngram_backoff_model(sample_index, X, y, trigram_model, bigram_model)
+def get_language_model_pred(left_text, right_text, trigram_model, bigram_model):
+    pred = ngram_backoff_model(left_text, right_text, trigram_model, bigram_model)
     return pred
 
 
-def get_pos_tags(sample_index):
+def get_pos_tags(left_text, right_text):
     return []
 
-def weight_features(sample_index, X, y, trigram_model, bigram_model, word_path_mapping, letters, weights={}):
-    ocr_pred, len_pred = get_ocr_model_pred(sample_index, y, word_path_mapping, letters)
-    lm_pred = get_language_model_pred(sample_index, X, y, trigram_model, bigram_model)
-    pos_pred = get_pos_tags(sample_index)
+def weight_features(left_text, right_text, file_url, trigram_model, bigram_model, word_path_mapping, letters, weights={}):
+    ocr_pred, len_pred = get_ocr_model_pred(file_url, word_path_mapping, letters)
+    print('OCR', ocr_pred, len_pred)
+    lm_pred = get_language_model_pred(left_text, right_text, trigram_model, bigram_model)
+    print('LM', lm_pred)
+    pos_pred = get_pos_tags(left_text, right_text)
     
     return ocr_pred, len_pred, lm_pred
 
@@ -142,7 +153,7 @@ def create_image_path(df, data_path, use_s3=False):
 
 
 
-def main(sample_index):
+def main(left_text, right_text, file_url):
     
 
     # dataset 
@@ -167,12 +178,17 @@ def main(sample_index):
     letters = list(letter2idx.keys())
     letters = ''.join(letters[1:-2])
 
+    left_text = left_text.rstrip()
+    right_text = right_text.rstrip()
 
-    ocr_pred, len_pred, lm_pred = weight_features(sample_index, X, y, trigram_model, bigram_model, word_path_mapping, letters)
+    ocr_pred, len_pred, lm_pred = weight_features(left_text, right_text, file_url, trigram_model, bigram_model, word_path_mapping, letters)
     return ocr_pred, len_pred, lm_pred
 
 
-if __name__ == '__main__':
-    # TODO Update for user input!!!!!
-    sample_index = 102
-    main(sample_index)
+
+
+
+# if __name__ == '__main__':
+#     # TODO Update for user input!!!!!
+#     sample_index = 102
+#     main(sample_index)
