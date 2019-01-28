@@ -73,24 +73,29 @@ def main():
         learning_rate = config.learning_rate
         if not os.path.isfile(args.input_file):
             raise FileNotFoundError
+        
+        text_file = False
+        if text_file:
+            print('Loading input file')
+            counter = 0
+            with open(args.input_file) as f:
+                sentences = []
+                for line in f:
+                    sentence = line.strip().lower().split()
+                    if 0 < len(sentence) < max_sent_length:
+                        counter += 1
 
-        print('Loading input file')
-        counter = 0
-        with open(args.input_file) as f:
-            sentences = []
-            for line in f:
-                sentence = line.strip().lower().split()
-                if 0 < len(sentence) < max_sent_length:
-                    counter += 1
-
-        sentences = np.empty(counter, dtype=object)
-        counter = 0
-        with open(args.input_file) as f:
-            for line in f:
-                sentence = line.strip().lower().split()
-                if 0 < len(sentence) < max_sent_length:
-                    sentences[counter] = np.array(sentence)
-                    counter += 1
+            sentences = np.empty(counter, dtype=object)
+            counter = 0
+            with open(args.input_file) as f:
+                for line in f:
+                    sentence = line.strip().lower().split()
+                    if 0 < len(sentence) < max_sent_length:
+                        sentences[counter] = np.array(sentence)
+                        counter += 1
+        array_file = True             
+        if array_file:
+            sentences = np.load(args.input_file)
 
         print('Creating dataset')
         dataset = Dataset(sentences, batch_size, config.min_freq, device)

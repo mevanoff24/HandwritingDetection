@@ -62,6 +62,7 @@ def read_mscc_questions(input_file, lower=True):
             if not target_word:
                 raise SyntaxError
             questions.append([text, q_id, target_word, target_pos])
+    print(questions)
     return questions
 
 
@@ -92,8 +93,10 @@ def mscc_evaluation(question_file,
                     bos_token,
                     eos_token,
                     device):
-
+        
         questions = read_mscc_questions(question_file)
+        print('HERE --------------------')
+        print(questions)
         q_id_and_sim = []
         with open(question_file, mode='r') as f, open(output_file, mode='w') as w:
             for question, input_line in zip(questions, f):
