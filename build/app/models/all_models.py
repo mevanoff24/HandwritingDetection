@@ -153,12 +153,12 @@ def create_image_path(df, data_path, use_s3=False):
 
 
 
-def main(left_text, right_text, file_url):
+def get_prediction(left_text, right_text, file_url):
     
 
     # dataset 
-    X = list(np.load(X_path))
-    y = np.load(y_path)
+    # X = list(np.load(X_path))
+    # y = np.load(y_path)
     # Language Models
     bigram_model = unpickle(bigram_model_path)
     trigram_model = unpickle(trigram_model_path)
