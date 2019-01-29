@@ -10,6 +10,8 @@ from src.util.batch import Dataset
 from src.util.config import Config
 from src.util.io import write_embedding, write_config, read_config, load_vocab
 
+LOAD = False
+SAVE_EVERY = None
 
 def run_inference_by_user_input(model,
                                 itos,
@@ -117,6 +119,9 @@ def main():
         print(batch_size, n_epochs, word_embed_size, hidden_size, device)
         print(model)
 
+        if LOAD:
+            model.load_state_dict(torch.load('mytraining.pt'))
+
         interval = 1e6
         for epoch in range(n_epochs):
             begin_time = time.time()
@@ -148,13 +153,39 @@ def main():
                         cur_mean_loss = (float(total_loss)-last_accum_loss)/(word_count-last_word_count)
                         print('{} words, {:.2f} sec, {:.2f} words/sec, {:.4f} accum_loss/word, {:.4f} cur_loss/word'
                               .format(word_count, duration, throuput, accum_mean_loss, cur_mean_loss))
+                        # TODO write to file
                         next_count += interval
                         cur_at = now
                         last_accum_loss = float(total_loss)
                         last_word_count = word_count
-
+            # TODO write to file
             print(total_loss.item())
 
+            if SAVE_EVERY is not None:
+                if epoch % SAVE_EVERY == 0:
+                    epoch_date_stamp = +'_'+epoch+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    output_dir = os.path.dirname(args.wordsfile)
+                    if output_dir and not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
+                    write_embedding(dataset.vocab.itos, model.criterion.W, use_cuda, args.wordsfile)
+                    torch.save(model.state_dict(), args.modelfile+epoch_date_stamp)
+                    torch.save(optimizer.state_dict(), args.modelfile+epoch_date_stamp+'.optim')
+                    output_config_file = args.modelfile+epoch_date_stamp+'.config.json'
+                    write_config(output_config_file,
+                                 vocab_size=len(dataset.vocab),
+                                 word_embed_size=word_embed_size,
+                                 hidden_size=hidden_size,
+                                 n_layers=config.n_layers,
+                                 bidirectional=True,
+                                 use_mlp=config.use_mlp,
+                                 dropout=config.dropout,
+                                 pad_index=dataset.pad_index,
+                                 unk_token=dataset.unk_token,
+                                 bos_token=dataset.bos_token,
+                                 eos_token=dataset.eos_token,
+                                 learning_rate=learning_rate)
+
+        # SAVE EVERY N EPOCHS 
         output_dir = os.path.dirname(args.wordsfile)
         if output_dir and not os.path.exists(output_dir):
             os.makedirs(output_dir)

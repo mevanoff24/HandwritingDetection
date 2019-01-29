@@ -20,6 +20,9 @@ from wtforms import SubmitField
 
 from models.all_models import get_prediction
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 # TODO config file
 TMPDIR = 'tmp/'
@@ -105,7 +108,7 @@ def predict():
 		# file_url = photos.url(filename)
 		# print(left_text, right_text, file_url, filename)
 	# print(file_url)
-		ocr_pred, len_pred, lm_pred = get_prediction(left_text, right_text, filename)
+		ocr_pred, len_pred, lm_pred = get_prediction(left_text, right_text, filename, use_s3=True)
 	# print(filename)
 	# print(ocr_pred, len_pred, lm_pred)
 
