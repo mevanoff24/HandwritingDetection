@@ -38,6 +38,67 @@ trigram_model_path = os.path.join(DATA_DIR, 'processed/ngram_models/trigram_like
 letters_path = os.path.join(DATA_DIR, 'processed/letters_map.pkl')
 
 
+import boto3
+from io import BytesIO
+import dill as pickle
+
+
+# client = boto3.resource('s3')
+# bucket = client.Bucket('handwrittingdetection')
+
+# session = boto3.Session(
+#     aws_access_key_id=settings.AWS_SERVER_PUBLIC_KEY,
+#     aws_secret_access_key=settings.AWS_SERVER_SECRET_KEY,
+# )
+# client = session.resource('s3')
+
+# AWS_SERVER_PUBLIC_KEY = 'AKIAIKUPARIC6GRI2TUQ'
+
+# AWS_SERVER_SECRET_KEY = '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'
+# s3_client = boto3.client('s3', 
+#                       aws_access_key_id=AWS_SERVER_PUBLIC_KEY, 
+#                       aws_secret_access_key=AWS_SERVER_SECRET_KEY, 
+#                       region_name='us-west2'
+#                       )
+
+
+def s3_init(bucketname='handwrittingdetection'):
+
+    # TODO MOVE 
+    AWS_SERVER_PUBLIC_KEY = 'AKIAIKUPARIC6GRI2TUQ'
+    AWS_SERVER_SECRET_KEY = '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'
+    
+    session = boto3.Session(
+        aws_access_key_id=AWS_SERVER_PUBLIC_KEY,
+        aws_secret_access_key=AWS_SERVER_SECRET_KEY,
+    )
+    
+    client = session.resource('s3')
+    bucket = client.Bucket(bucketname)
+    return client, bucket
+
+# client, bucket = s3_init(bucketname='handwrittingdetection')
+    
+def unpickle_s3(filename, client=None, bucket=None):
+    with BytesIO() as data:
+        bucket.download_fileobj(filename, data)
+        data.seek(0)
+        return pickle.load(data)
+
+# bigram_model_path = 'data/ngram_models/bigram_likelihood_model.pkl'
+# trigram_model_path = 'data/ngram_models/trigram_likelihood_model.pkl'
+
+# word_path_mapping_path = 'data/word_path_mapping.pkl'
+# letters_path = 'data/letters_map.pkl'
+
+# bigram_model = unpickle_s3(bigram_model_path, client, bucket)
+# trigram_model = unpickle_s3(trigram_model_path, client, bucket)
+
+# word_path_mapping = unpickle_s3(word_path_mapping_path, client, bucket)
+# letters = unpickle_s3(letters_path, client, bucket)
+
+
+
 def tokenize_and_join(context):
     tokens = word_tokenize(context)
     context = ' '.join(tokens)
@@ -141,39 +202,76 @@ def absoluteFilePaths(directory):
         for f in filenames:
             yield os.path.join(dirpath, f)
 
-def create_image_path(df, data_path, use_s3=False):
+# def create_image_path(df, data_path, use_s3=False):
+#     """Create dictionary for mapping of word to data path"""
+#     if use_s3:
+#         [f.key for f in files[:5] if '.png' in f.key]
+#     all_paths = [i for i in absoluteFilePaths(data_path)]
+#     all_path_endings = [i.split('/')[-1].split('.')[0] for i in all_paths]
+#     all_path_dict = defaultdict(lambda: 0, dict(zip(all_path_endings, all_paths)))
+#     df['image_path'] = df['image_name'].map(lambda x: all_path_dict[x])
+#     return df
+
+
+def create_image_path(df, data_path, use_s3=False, s3_image_path='data/word_level'):
     """Create dictionary for mapping of word to data path"""
     if use_s3:
-        [f.key for f in files[:5] if '.png' in f.key]
-    all_paths = [i for i in absoluteFilePaths(data_path)]
+        files = list(bucket.objects.filter(Prefix='data/word_level/sample'))
+        all_paths = [f.key for f in files if '.png' in f.key]
+    else:
+        all_paths = [i for i in absoluteFilePaths(data_path)]
+        
     all_path_endings = [i.split('/')[-1].split('.')[0] for i in all_paths]
-    all_path_dict = defaultdict(lambda: 0, dict(zip(all_path_endings, all_paths)))
+    defaultdict(lambda: 0, dict(zip(all_path_endings, all_paths)))
     df['image_path'] = df['image_name'].map(lambda x: all_path_dict[x])
     return df
 
 
 
-def main(left_text, right_text, file_url):
-    
+def get_prediction(left_text, right_text, file_url, use_s3=False):
 
-    # dataset 
-    X = list(np.load(X_path))
-    y = np.load(y_path)
-    # Language Models
-    bigram_model = unpickle(bigram_model_path)
-    trigram_model = unpickle(trigram_model_path)
+    if use_s3:
 
-    # Meta
-    meta = pd.read_json(meta_json_data_path)
-    word_level_df = pd.read_csv(word_level_meta_path)
-    word_level_df = create_image_path(word_level_df, data_path)
+        client, bucket = s3_init(bucketname='handwrittingdetection')
 
-    # word_path_mapping = defaultdict(lambda: 0, dict(zip(word_level_df.token, word_level_df.image_path)))                              
-    # with open(os.path.join(DATA_DIR, 'processed', 'word_path_mapping.pkl'), 'wb') as f:
-    #     pickle.dump(word_path_mapping, f)
+        bigram_model_path = 'data/ngram_models/bigram_likelihood_model.pkl'
+        trigram_model_path = 'data/ngram_models/trigram_likelihood_model.pkl'
 
-    word_path_mapping = unpickle(word_path_mapping_path)
-    letter2idx = unpickle(letters_path)
+        word_path_mapping_path = 'data/word_path_mapping.pkl'
+        letters_path = 'data/letters_map.pkl'
+
+        bigram_model = unpickle_s3(bigram_model_path, client, bucket)
+        trigram_model = unpickle_s3(trigram_model_path, client, bucket)
+
+        word_path_mapping = unpickle_s3(word_path_mapping_path, client, bucket)
+        print(word_path_mapping)
+        letters = unpickle_s3(letters_path, client, bucket)
+
+
+    else:
+        data_path = os.path.join(DATA_DIR, 'raw/word_level')
+        meta_json_data_path = os.path.join(DATA_DIR, 'preprocessed/meta.json')
+        word_level_meta_path = os.path.join(DATA_DIR, 'preprocessed/word_level_meta.csv')
+        word_path_mapping_path = os.path.join(DATA_DIR, 'processed/word_path_mapping.pkl')
+        bigram_model_path = os.path.join(DATA_DIR, 'processed/ngram_models/bigram_likelihood_model.pkl')
+        trigram_model_path = os.path.join(DATA_DIR, 'processed/ngram_models/trigram_likelihood_model.pkl')
+        letters_path = os.path.join(DATA_DIR, 'processed/letters_map.pkl')
+
+        # Language Models
+        bigram_model = unpickle(bigram_model_path)
+        trigram_model = unpickle(trigram_model_path)
+
+        # Meta
+        meta = pd.read_json(meta_json_data_path)
+        word_level_df = pd.read_csv(word_level_meta_path)
+        word_level_df = create_image_path(word_level_df, data_path)
+
+        # word_path_mapping = defaultdict(lambda: 0, dict(zip(word_level_df.token, word_level_df.image_path)))                              
+        # with open(os.path.join(DATA_DIR, 'processed', 'word_path_mapping.pkl'), 'wb') as f:
+        #     pickle.dump(word_path_mapping, f)
+
+        word_path_mapping = unpickle(word_path_mapping_path)
+        letter2idx = unpickle(letters_path)
 
     letters = list(letter2idx.keys())
     letters = ''.join(letters[1:-2])
