@@ -10,6 +10,17 @@ from src.util.batch import Dataset
 from src.util.config import Config
 from src.util.io import write_embedding, write_config, read_config, load_vocab
 
+# my adds
+import datetime
+LOAD = False
+checkpoint_file = None
+SAVE_EVERY = None
+log_dir = 'logs'
+log_file = 'log_dir.txt'
+text_file = False # False for MY data
+array_file = True # True for MY data
+best_val_score = float('Inf')
+
 
 def run_inference_by_user_input(model,
                                 itos,
@@ -74,7 +85,7 @@ def main():
         if not os.path.isfile(args.input_file):
             raise FileNotFoundError
         
-        text_file = False
+        
         if text_file:
             print('Loading input file')
             counter = 0
@@ -93,7 +104,7 @@ def main():
                     if 0 < len(sentence) < max_sent_length:
                         sentences[counter] = np.array(sentence)
                         counter += 1
-        array_file = True             
+                     
         if array_file:
             sentences = np.load(args.input_file)
 
@@ -116,6 +127,9 @@ def main():
 
         print(batch_size, n_epochs, word_embed_size, hidden_size, device)
         print(model)
+
+        if LOAD:
+            model.load_state_dict(torch.load(checkpoint_file))
 
         interval = 1e6
         for epoch in range(n_epochs):
@@ -152,8 +166,37 @@ def main():
                         cur_at = now
                         last_accum_loss = float(total_loss)
                         last_word_count = word_count
-
+            # TODO write to file
             print(total_loss.item())
+            loss_value = total_loss.item()
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            with open(os.path.join(log_dir, log_file), 'a') as f:
+                f.write(str(epoch) + ' ' + str(total_loss.item()) + '\n')
+
+            if SAVE_EVERY is not None:
+                if epoch % SAVE_EVERY == 0:
+                    epoch_date_stamp = '_'+str(epoch)+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    output_dir = os.path.dirname(args.wordsfile)
+                    if output_dir and not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
+                    write_embedding(dataset.vocab.itos, model.criterion.W, use_cuda, args.wordsfile)
+                    torch.save(model.state_dict(), args.modelfile+epoch_date_stamp)
+                    torch.save(optimizer.state_dict(), args.modelfile+epoch_date_stamp+'.optim')
+                    output_config_file = args.modelfile+epoch_date_stamp+'.config.json'
+                    write_config(output_config_file,
+                                 vocab_size=len(dataset.vocab),
+                                 word_embed_size=word_embed_size,
+                                 hidden_size=hidden_size,
+                                 n_layers=config.n_layers,
+                                 bidirectional=True,
+                                 use_mlp=config.use_mlp,
+                                 dropout=config.dropout,
+                                 pad_index=dataset.pad_index,
+                                 unk_token=dataset.unk_token,
+                                 bos_token=dataset.bos_token,
+                                 eos_token=dataset.eos_token,
+                                 learning_rate=learning_rate)
 
         output_dir = os.path.dirname(args.wordsfile)
         if output_dir and not os.path.exists(output_dir):

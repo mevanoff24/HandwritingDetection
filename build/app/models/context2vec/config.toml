@@ -6,7 +6,7 @@ use_mlp = true
 dropout = 0.0
 
 [train]
-n_epochs = 30
+n_epochs = 100
 batch_size = 100
 min_freq = 3
 ns_power = 0.75
