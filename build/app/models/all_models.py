@@ -43,34 +43,13 @@ from io import BytesIO
 import dill as pickle
 
 
-# client = boto3.resource('s3')
-# bucket = client.Bucket('handwrittingdetection')
-
-# session = boto3.Session(
-#     aws_access_key_id=settings.AWS_SERVER_PUBLIC_KEY,
-#     aws_secret_access_key=settings.AWS_SERVER_SECRET_KEY,
-# )
-# client = session.resource('s3')
-
-# AWS_SERVER_PUBLIC_KEY = 'AKIAIKUPARIC6GRI2TUQ'
-
-# AWS_SERVER_SECRET_KEY = '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'
-# s3_client = boto3.client('s3', 
-#                       aws_access_key_id=AWS_SERVER_PUBLIC_KEY, 
-#                       aws_secret_access_key=AWS_SERVER_SECRET_KEY, 
-#                       region_name='us-west2'
-#                       )
-
 
 def s3_init(bucketname='handwrittingdetection'):
 
-    # TODO MOVE 
-    AWS_SERVER_PUBLIC_KEY = 'AKIAIKUPARIC6GRI2TUQ'
-    AWS_SERVER_SECRET_KEY = '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'
     
     session = boto3.Session(
-        aws_access_key_id=AWS_SERVER_PUBLIC_KEY,
-        aws_secret_access_key=AWS_SERVER_SECRET_KEY,
+        aws_access_key_id=pub_key,
+        aws_secret_access_key=secret_key,
     )
     
     client = session.resource('s3')

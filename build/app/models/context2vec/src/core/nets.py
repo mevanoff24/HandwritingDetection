@@ -1,7 +1,10 @@
 import math
 import torch
 import torch.nn as nn
-from src.core.loss_func import NegativeSampling
+# from src.core.loss_func import NegativeSampling
+
+
+from ..core.loss_func import NegativeSampling
 
 
 class Context2vec(nn.Module):
