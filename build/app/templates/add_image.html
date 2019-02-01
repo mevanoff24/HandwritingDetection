@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <title>Python Flask Blog App</title>
+ 
+ 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+ 
+    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+ 
+    <script src="/static/js/jquery-3.1.1.js"></script>
+    <script src="/static/js/jquery.ui.widget.js"></script>
+  
+    <script type="text/javascript" src="/static/js/jquery.fileupload.js"></script>
+    <script type="text/javascript" src="/static/js/jquery.fileupload-process.js"></script>
+    <script type="text/javascript" src="/static/js/jquery.fileupload-ui.js"></script>
+
+    <script>
+      $(function(){
+            $('#fileupload').fileupload({
+                url: 'upload',
+                dataType: 'json',
+                add: function (e, data) {
+                  data.submit();
+                },
+                success:function(response,status) {
+                  console.log(response.filename);
+                  var filePath = 'static/Uploads/' + response.filename;
+                  $('#imgUpload').attr('src',filePath);
+                  $('#filePath').val(filePath);
+                  console.log('success');
+                },
+                error:function(error){
+                        console.log(error);
+                }
+            });
+      })
+    </script>
+
+    <style>
+        .btn-file {
+            position: relative;
+            overflow: hidden;
+        }
+         
+        .btn-file input[type=file] {
+            position: absolute;
+            top: 0;
+            right: 0;
+            min-width: 100%;
+            min-height: 100%;
+            font-size: 100px;
+            text-align: right;
+            filter: alpha(opacity=0);
+            opacity: 0;
+            outline: none;
+            background: white;
+            cursor: inherit;
+            display: block;
+        }
+    </style>
+ 
+</head>
+ 
+<body>
+
+    <h2>What is your Question:</h2>
+
+    
+
+
+ 
+    <div class="container">
+        <div class="header">
+        <img style="max-width:120px; margin-top: -7px;" src="{{ url_for('static', filename='images/detective.jpeg') }}">
+        </div>
+
+        <!-- <form role="form" method="post" action="/addBlog"> -->
+        <form method="post" role="form" action='/predict'>
+            {% from "_form_helpers.html" import render_field %}
+            <!-- Form Name -->
+            <legend>Upload your Text and Image</legend>
+ 
+            <!-- Text input-->
+            <div class="form-group">
+                <label for="txtTitle">Left Text</label>
+                {{ render_field(left_word_form.left_text_form, cols='40', rows='2') }}
+                <!-- <input id="txtTitle" name="inputTitle" type="text" placeholder="placeholder" class="form-control input-md"> -->
+ 
+            <!-- </div> -->
+ 
+            <!-- Textarea -->
+            <!-- <div class="form-group"> -->
+                <label for="txtPost">Right Text</label>
+                {{ render_field(right_word_form.right_text_form, cols='40', rows='2') }}
+                <!-- <textarea class="form-control" id="txtPost" name="inputDescription"></textarea> -->
+ 
+            </div>
+        
+ 
+
+            <div class="form-group">
+ 
+              <div class="input-group">
+                <span class="input-group-btn">
+                  <span class="btn btn-primary btn-file">
+                      Browse&hellip; <input type="file" id="fileupload" name="file" multiple>
+                  </span>
+                </span>
+                <div class="pull-right">
+                  <img id="imgUpload" style="width: 140px; height: 140px;" class="img-thumbnail"><input type="hidden" name="filePath" id="filePath"></input>
+                  {% if file_url %}
+                    <br>
+                    <img src="{{ file_url }}">
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+ 
+ 
+            <!-- Button -->
+            <div class="form-group">
+ 
+                <p class="text-center">
+                    <input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Submit" />
+                </p>
+            </div>
+ 
+ 
+        </form>
+ 
+        <footer class="footer">
+            <p>&copy;Matt Evanoff 2019</p>
+        </footer>
+ 
+    </div>
+</body>
+ 
+</html>
