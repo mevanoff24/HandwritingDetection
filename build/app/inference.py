@@ -20,6 +20,38 @@ import cv2
 import itertools
 from models.ocr.src.config import letters
 
+
+# TODO 
+# -- need to add if the model is not loaded -- error print statement 
+
+
+# LM model imports 
+import os
+import time
+import torch
+from torch import optim
+from models.context2vec.src.eval.mscc import mscc_evaluation
+from models.context2vec.src.core.nets import Context2vec
+from models.context2vec.src.util.args import parse_args
+from models.context2vec.src.util.batch import Dataset
+from models.context2vec.src.util.config import Config
+from models.context2vec.src.util.io import write_embedding, write_config, read_config, load_vocab
+
+
+# OCR model imports 
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import load_model
+import numpy as np
+import cv2
+import itertools
+from models.ocr.src.config import letters
+
+from collections import defaultdict
+from operator import itemgetter
+
+
+
 class Inference():
     def __init__(self, modelfile=None, wordsfile=None, img_width=128, img_height=64, device='cpu'):
         
@@ -47,6 +79,8 @@ class Inference():
                             device=self.device,
                             inference=True).to(self.device)
         self.lm_model.load_state_dict(torch.load(modelfile, map_location=self.device))
+#         optimizer = optim.Adam(model.parameters(), lr=config_dict['learning_rate'])
+        # optimizer.load_state_dict(torch.load(modelfile+'.optim'))
         self.itos, self.stoi = load_vocab(wordsfile)
         self.unk_token = config_dict['unk_token']
         self.bos_token = config_dict['bos_token']
@@ -109,14 +143,14 @@ class Inference():
         tokens, target_pos = self._return_split_sentence(sentence)
         tokens[target_pos] = self.unk_token
         tokens = [self.bos_token] + tokens + [self.eos_token]
-        indexed_sentence = [self.stoi[token] if token in self.stoi else self.stoi[unk_token] for token in tokens]
+        indexed_sentence = [self.stoi[token] if token in self.stoi else self.stoi[self.unk_token] for token in tokens]
         input_tokens = \
             torch.tensor(indexed_sentence, dtype=torch.long, device=self.device).unsqueeze(0)
         topv, topi = self.lm_model.run_inference(input_tokens, target=None, target_pos=target_pos, k=topK)
         output = []  
         for value, key in zip(topv, topi):
             output.append((value.item(), self.itos[key.item()]))
-            print(value.item(), self.itos[key.item()])
+#             print(value.item(), self.itos[key.item()])
         return output
     
     def run_ocr_inference_by_user_image(self, img):
@@ -126,8 +160,79 @@ class Inference():
         pred_texts = self._decode_batch(net_out_value)
         return pred_texts
     
-    
-    def weigh_punction(self):
+    from collections import defaultdict
+    from operator import itemgetter
+
+
+    def create_features(self, lm_preds, ocr_pred):
+
+        # not used currently
+        # ----------------------------------
+        bins = {
+            'small': list(range(0, 3)),
+            'small-mid': list(range(2, 6)),
+            'mid': list(range(4, 8)),
+            'mid-large': list(range(6, 10)),
+            'large': list(range(8, 12)),
+            'large-big': list(range(10, 14)),
+            'big': list(range(12, 100)),
+        }
+
+        bins = defaultdict(lambda: 'na', bins)
+
+        ocr_len = len([x for x in ocr_pred[0]])
+        pred_bins = [k for k, v in bins.items() if ocr_len in v]
+        # ----------------------------------
+
+        features = {}
+        bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>'] # ADD foul words
+        matches = {}
+        matches_non_ordered = {}
+
+        ocr_pred_lower = ocr_pred[0].lower()
+
+        for lm_pred in lm_preds:
+            score, word = lm_pred[0], lm_pred[1].rstrip()
+            word = word.lower()
+            # remove pad, bos, etc...
+            if word not in bad_list:
+
+                features[word] = {}
+                features[word]['score'] = score
+                # match first and last character 
+                first_char_match = word[0] == ocr_pred_lower[0]
+                last_char_match = word[-1] == ocr_pred_lower[-1]
+                features[word]['first_char_match'] = first_char_match
+                features[word]['last_char_match'] = last_char_match
+
+                num_chars = 0
+                for char in ocr_pred_lower:
+                    if char in word:
+                        num_chars += 1
+                    matches[word] = num_chars
+                features[word]['num_matches'] = matches[word]  
+
+        return features
+
+
+    def final_scores(self, features):
+        final_scores = {}
+
+        for word, feature_dict in features.items():
+            final_score = 1
+            first_char_match = feature_dict['first_char_match']
+            last_char_match = feature_dict['last_char_match']
+            score = feature_dict['score']
+            if first_char_match:
+                final_score += 10
+            if last_char_match:
+                final_score += 10
+            final_score *= score
+            final_scores[word] = final_score
+        top_results = sorted(final_scores.items(), key=itemgetter(1), reverse=True)
+        return top_results[0][0]
+
+    def weigh_function(self):
         pass
     
     
@@ -136,10 +241,12 @@ class Inference():
         
         img = self.preprocess_image(img_path, self.img_width, self.img_height)
         ocr_pred = self.run_ocr_inference_by_user_image(img)
-    
-        print(lm_preds)
-        print(ocr_pred)
 
+        features = self.create_features(lm_preds, ocr_pred)
+        final_pred = self.final_scores(features)
+    
+        # return top K? And use MAP @ K ??
+        return final_pred
 
 
 if __name__ == '__main__':
@@ -155,4 +262,4 @@ if __name__ == '__main__':
 
     inference = Inference()
 
-    inference.predict(sentence, img_path)
+    print(inference.predict(sentence, img_path))
