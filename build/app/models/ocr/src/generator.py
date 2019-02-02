@@ -4,6 +4,7 @@ import cv2
 import os
 import numpy as np
 from scipy import ndimage
+import random
 from tensorflow.keras.utils import get_file
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras import backend as K
@@ -28,8 +29,8 @@ def unpickle(filename):
 
 class TextImageGenerator:
     
-    def __init__(self, word_level_df, data_path, img_width, img_height, batch_size, downsample_factor, 
-                 max_text_len=21, pre_pad=True, use_s3=False, letters=None):
+    def __init__(self, word_level_df, data_path, img_width, img_height, batch_size, downsample_factor,
+                 max_text_len=21, samples=None, pre_pad=True, use_s3=False, letters=None, is_training=True):
         
         self.data_path = data_path
         self.img_width = img_width
@@ -38,6 +39,8 @@ class TextImageGenerator:
         self.downsample_factor = downsample_factor
         self.max_text_len = max_text_len
         self.pre_pad = pre_pad
+        self.is_training = is_training
+        self.use_s3 = use_s3
         
         word_level_df['image_path'] = word_level_df['image_path'].map(lambda x: 
                                                     self.data_path + x.split('word_level')[-1])
@@ -52,7 +55,10 @@ class TextImageGenerator:
         self.pad_idx = self.letters.index(' ')
         
         # training data 
-        self.samples = self.word_level_df[['image_path', 'token']].values.tolist()
+        if samples:
+            self.samples = samples
+        else: 
+            self.samples = self.word_level_df[['image_path', 'token']].values.tolist()
         self.N = len(self.samples)
         self.current_index = 0
         
@@ -63,7 +69,13 @@ class TextImageGenerator:
         for i, (img_path, text) in enumerate(self.samples):
             try:
                 # read image 
-                img = cv2.imread(img_path)
+                if self.use_s3:
+                    if '.png' in img_path.key:
+                        img = img_path.get()['Body'].read()  
+                        img = np.frombuffer(img, np.uint8)
+                        img = cv2.imdecode(img, 1)
+                else:
+                    img = cv2.imread(img_path)
                 # grayscale image
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                 # resize image
