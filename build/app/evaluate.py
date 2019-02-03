@@ -3,23 +3,38 @@ import pandas as pd
 import re
 import time
 from inference import Inference
-from nltk.stem import PorterStemmer
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from sklearn.metrics import pairwise_distances
+
+
+def create_embeddings(file_path='glove.6B.100d.txt'):
+    embeddings = {}
+
+    with open(file_path) as f:
+        for line in f:
+            line = line.split()
+            word, vector = line[0], line[1:]
+            embeddings[word] = np.asarray(vector, np.float32)
+    return embeddings
 
 
 
-
-def evaluate_model(X_test, y_test, word_level_df_test, subset=None):
+def evaluate_model(X_test, y_test, word_level_df_test, subset=None, embedding_file='glove.6B.100d.txt'):
     
+    
+    embeddings = create_embeddings(embedding_file)
     stemmer = PorterStemmer()
+    lemma = WordNetLemmatizer()
     
     y_preds = []
     y_true = [y[0].lower() for y in y_test[:subset]]
     N = 0
     n_correct = 0
     n_correct_stem = 0
+    total_similarity = 0
     bad_lines = 0
 
-
+    
     len_test = len(X_test[:subset])
     start = time.time()
     for i, (X, y) in enumerate(zip(X_test[:subset], y_true)):
@@ -32,11 +47,23 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None):
                 img_path = np.random.choice(img_path_df.values.tolist())
                 # still getting 'unk'
                 y_pred = inference_model.predict(X, img_path)
+                # exact match accuracy
                 if y_pred.lower() == y:
                     n_correct += 1
+                # stemmed accuracy 
                 if stemmer.stem(y_pred) == stemmer.stem(y):
                     n_correct_stem += 1
-
+                converge_counter = 0
+                try:
+                    lemma_pred = lemma.lemmatize(y_pred)
+                    lemma_true = lemma.lemmatize(y)
+                    similarity = pairwise_distances([embeddings[lemma_pred]], [embeddings[lemma_true]])[0][0]
+                    total_similarity += similarity
+                    converge_counter += 1
+                except:
+                    # add a score of 10 if obsure word is present
+                    total_similarity += 10
+                
             else:
                 bad_lines += 1
             if i % 100 == 0:
@@ -47,13 +74,17 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None):
     finish = time.time()
     raw_correct = n_correct / N
     stem_correct = n_correct_stem / N
+    average_total_similarity = total_similarity / N
+    
     
     print('Raw correct', raw_correct)
     print('Stem correct', stem_correct)
+    print('Average Cosine Similarity {}. Coverage: {}'.format(average_total_similarity, round(converge_counter / N, 3)))
+    
     print('Time to evaluate {} sample: {}'.format(subset, finish - start))
     print('Number of bad lines', bad_lines)
     
-    return raw_correct, stem_correct
+    return raw_correct, stem_correct, average_total_similarity
 
 
 if __name__ == '__main__':
@@ -68,4 +99,5 @@ if __name__ == '__main__':
     # init class 
     inference_model = Inference(img_width=128, img_height=64, device='cpu')
     # evaluate model 
-    raw_correct, stem_correct = evaluate_model(X_test, y_test, word_level_df_test, subset=1000)
+    raw_correct, stem_correct, average_total_similarity = evaluate_model(X_test, y_test, word_level_df_test, subset=100)
+    inference_model.sess.close()

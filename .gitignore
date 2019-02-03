@@ -3,3 +3,4 @@ data/processed/*
 data/raw/*
 build/app/models/context2vec/models/*
 build/app/models/ocr/models/*
+build/app/models/embeddings/*

@@ -91,7 +91,7 @@ class Inference():
         self.sess = tf.Session()
         K.set_session(self.sess)
 
-        ocr_model_path = 'models/ocr/models/ocr_5_len.h5'
+        ocr_model_path = 'models/ocr/models/ocr_model_best_6.98.hdf5'
         self.ocr_model = load_model(ocr_model_path, custom_objects={'<lambda>': lambda y_true, y_pred: y_pred})
         
     def preprocess_image(self, img_path, img_width, img_height):

@@ -22,7 +22,7 @@ from tensorflow.keras.layers import GRU
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.utils import get_file
 from tensorflow.keras.preprocessing import image
-import tensorflow.keras.callbacks
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 import cv2
 from PIL import Image
 import numpy as np
@@ -43,38 +43,38 @@ def ctc_lambda_func(args):
 	return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
 
-def get_model(word_level_train, word_level_test, img_w, train_samples=None, test_samples=None, letters=None, 
+def get_model(word_level_train, word_level_test, img_w, max_text_len, train_samples=None, test_samples=None, letters=None, 
 												sample_size=None, save_path=None, use_s3=False):
 	
-	img_h = 64
+# 	img_h = 64
 
-	# Network parameters
-	conv_filters = 16
-	kernel_size = (3, 3)
-	pool_size = 2
-	time_dense_size = 32
-	rnn_size = 512
+# 	# Network parameters
+# 	conv_filters = 16
+# 	kernel_size = (3, 3)
+# 	pool_size = 2
+# 	time_dense_size = 32
+# 	rnn_size = 512
 
 	if K.image_data_format() == 'channels_first':
 		input_shape = (1, img_w, img_h)
 	else:
 		input_shape = (img_w, img_h, 1)
 		
-	batch_size = 32
-	downsample_factor = pool_size ** 2
+# 	batch_size = 32
+# 	downsample_factor = pool_size ** 2
 	if sample_size:
 		word_level_train = word_level_train.sample(sample_size)
-	train_tiger = TextImageGenerator(word_level_train, data_path, image_width, image_height, batch_size, 
+	train_tiger = TextImageGenerator(word_level_train, data_path, img_w, img_h, batch_size, 
 			downsample_factor, max_text_len, pre_pad=False, letters=letters, samples=train_samples, use_s3=use_s3)
 	train_tiger.build_data()
 	
 	if sample_size:
 		word_level_test = word_level_test.sample(sample_size)
-	test_tiger = TextImageGenerator(word_level_test, data_path, image_width, image_height, batch_size, 
+	test_tiger = TextImageGenerator(word_level_test, data_path, img_w, img_h, batch_size, 
 			downsample_factor, max_text_len, pre_pad=False, letters=letters, samples=test_samples, use_s3=use_s3) # update letters 
 	test_tiger.build_data()
 	
-	act = 'relu'
+	act = activation
 	input_data = Input(name='the_input', shape=input_shape, dtype='float32')
 	inner = Conv2D(conv_filters, kernel_size, padding='same',
 				   activation=act, kernel_initializer='he_normal',
@@ -105,7 +105,8 @@ def get_model(word_level_train, word_level_test, img_w, train_samples=None, test
 	# so CTC loss is implemented in a lambda layer
 	loss_out = Lambda(ctc_lambda_func, output_shape=(1,), name='ctc')([y_pred, labels, input_length, label_length])
 	
-	sgd = SGD(lr=0.03, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
+# 	sgd = SGD(lr=0.03, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
+	sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
 #     optimizer = Adam(lr=0.05)
 
 	model = Model(inputs=[input_data, labels, input_length, label_length], outputs=loss_out)
@@ -115,12 +116,20 @@ def get_model(word_level_train, word_level_test, img_w, train_samples=None, test
 	
 	# captures output of softmax so we can decode the output during visualization
 	test_func = K.function([input_data], [y_pred])
-	print(test_tiger.N, train_tiger.N)
+	print('Number of training and testing  images: {} -- {}'.format(train_tiger.N, test_tiger.N))
+    
+	filepath = "../models/weights-improvement2-10-{epoch:02d}-{val_loss:.2f}.hdf5"
+	checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True)
+	reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.001)
+	callbacks_list = [checkpoint, reduce_lr]
+
+
 	model.fit_generator(generator=train_tiger.next_batch(), 
 						steps_per_epoch=train_tiger.N,
 						validation_data=test_tiger.next_batch(), 
 						validation_steps=test_tiger.N,
-						epochs=epochs)
+						epochs=epochs,
+						callbacks=callbacks_list)
 	if save_path:
 		print('Saving model to {}'.format(save_path))
 		model.save(save_path)
@@ -136,7 +145,6 @@ def create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test):
 	samples_test = []
 	print('Getting S3 Image files')
 	files = list(bucket.objects.filter(Prefix=S3_IMAGE_PATH))
-	# print(files[:100])
 	cant_find = 0
 	for file in files:
 		if '.png' in file.key:
@@ -153,65 +161,95 @@ def create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test):
 			except:
 				cant_find += 1
 				pass
-
 	print(cant_find)
 	print('Done! train_size: {}, test_size: {}'.format(len(samples_train), len(samples_test)))
 	return samples_train, samples_test
 
+def subset_data(word_level_df, greater_than_val, less_than_val):
+    word_level_df['token_len'] = word_level_df.token.apply(len)
+    print(word_level_df['token_len'].describe())
+    word_level_df.sort_values('token_len', inplace=True)
+    word_level_df = word_level_df[(word_level_df['token_len'] >= greater_than_val) & (word_level_df['token_len'] < less_than_val)]
+    return word_level_df
+
 if __name__ == '__main__':
-	word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
-	word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
-	data_path = '../../../../../data/raw/word_level'
+    word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
+    word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
+    data_path = '../../../../../data/raw/word_level'
 
-	USE_S3 = True
+    if USE_S3:
+        S3_WORD_LEVEL_TRAIN_PATH = 'data/word_level_train.csv'
+        S3_WORD_LEVEL_TEST_PATH = 'data/word_level_test.csv'
+        S3_IMAGE_PATH = 'data/word_level'
+        S3_BUCKET = 'handwrittingdetection'
+        data_path = 'data/word_level'
+        client = boto3.resource('s3')
+        bucket = client.Bucket(S3_BUCKET)
+        # print(bucket)
+        word_level_train = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TRAIN_PATH))
+        word_level_test = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TEST_PATH))
+        word_level_train['image_path'] = word_level_train['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
+        word_level_test['image_path'] = word_level_test['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
+        
+        word_level_train = subset_data(word_level_train, greater_than_val, less_than_val)
+        word_level_test = subset_data(word_level_test, greater_than_val, less_than_val)
 
-	if USE_S3:
-		S3_WORD_LEVEL_TRAIN_PATH = 'data/word_level_train.csv'
-		S3_WORD_LEVEL_TEST_PATH = 'data/word_level_test.csv'
-		S3_IMAGE_PATH = 'data/word_level'
-		S3_BUCKET = 'handwrittingdetection'
-		data_path = 'data/word_level'
-		client = boto3.resource('s3')
-		bucket = client.Bucket(S3_BUCKET)
-		# print(bucket)
-		word_level_train = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TRAIN_PATH))
-		word_level_test = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TEST_PATH))
-		word_level_train['image_path'] = word_level_train['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
-		word_level_test['image_path'] = word_level_test['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
+        samples_train, samples_test = create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test)
 
-		word_level_train['token_len'] = word_level_train.token.apply(len)
-		word_level_train.sort_values('token_len', inplace=True)
-		word_level_train = word_level_train[word_level_train['token_len'] == 5]
-
-		word_level_test['token_len'] = word_level_test.token.apply(len)
-		word_level_test.sort_values('token_len', inplace=True)
-		word_level_test = word_level_test[word_level_test['token_len'] == 5]
-
-		samples_train, samples_test = create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test)
-
-	else:
-		word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
-		word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
-		data_path = '../../../../../data/raw/word_level'
-		samples_train = None
-		samples_test = None
-		# sort by token length
-		word_level_train['token_len'] = word_level_train.token.apply(len)
-		word_level_train.sort_values('token_len', inplace=True)
-		word_level_train = word_level_train[word_level_train['token_len'] == 5]
-
-		word_level_test['token_len'] = word_level_test.token.apply(len)
-		word_level_test.sort_values('token_len', inplace=True)
-		word_level_test = word_level_test[word_level_test['token_len'] == 5]
-
-	sess = tf.Session()
-	K.set_session(sess)
-
-	model = get_model(word_level_train, word_level_test, 128, 
-		train_samples=samples_train, test_samples=samples_test, 
-		letters=letters, sample_size=None, use_s3=USE_S3)
+    else:
+        word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
+        word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
+        data_path = '../../../../../data/raw/word_level'
+        samples_train = None
+        samples_test = None
+        # sort by token length
+        word_level_train = subset_data(word_level_train, greater_than_val, less_than_val)
+        word_level_test = subset_data(word_level_test, greater_than_val, less_than_val)
 
 
+    sess = tf.Session()
+    K.set_session(sess)
+
+    model = get_model(word_level_train, word_level_test, img_w, max_text_len=max_text_len, train_samples=samples_train, 
+                      test_samples=samples_test, letters=letters, sample_size=None, use_s3=USE_S3, 
+                      save_path='../models/ocr_2_10.h5')
+
+    sess.close()
+# SGD 2, 10 -- loss: 7.4965 - val_loss: 6.9792
+# img_w = 128 
+# img_h = 64
+# conv_filters = 16
+# kernel_size = (3, 3)
+# pool_size = 2
+# time_dense_size = 32
+# rnn_size = 512
+# batch_size = 32
+# downsample_factor = pool_size ** 2
+# max_text_len = 10
+# activation = 'relu'
+# learning_rate = 0.03
+# epochs = 1
+# USE_S3 = False
+# greater_than_val = 2
+# less_than_val = 10
+
+
+# SGD 2, 10 -- loss: 2.8930 - val_loss: 12.2240
+# img_w = 128 
+# img_h = 64
+# conv_filters = 16
+# kernel_size = (3, 3)
+# pool_size = 2
+# time_dense_size = 32
+# rnn_size = 512
+# batch_size = 64
+# downsample_factor = pool_size ** 2
+# max_text_len = 10
+# activation = 'relu'
+# learning_rate = 0.025
+# epochs = 1
+# greater_than_val = 2
+# less_than_val = 10
 
 
 
