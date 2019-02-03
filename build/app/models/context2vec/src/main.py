@@ -9,7 +9,16 @@ from src.util.args import parse_args
 from src.util.batch import Dataset
 from src.util.config import Config
 from src.util.io import write_embedding, write_config, read_config, load_vocab
+import boto3
+from io import BytesIO
 
+
+array_file = True  
+text_file = False
+use_s3 = True
+S3_BUCKET = 'handwrittingdetection'
+S3_WIKI_PATH = 'data/wiki_train/rawwikitext-2-train.npy'
+log_filename = 'log_dir1.txt'
 
 def run_inference_by_user_input(model,
                                 itos,
@@ -74,23 +83,56 @@ def main():
         if not os.path.isfile(args.input_file):
             raise FileNotFoundError
 
-        print('Loading input file')
-        counter = 0
-        with open(args.input_file) as f:
-            sentences = []
-            for line in f:
-                sentence = line.strip().lower().split()
-                if 0 < len(sentence) < max_sent_length:
-                    counter += 1
+#         print('Loading input file')
+#         counter = 0
+#         with open(args.input_file) as f:
+#             sentences = []
+#             for line in f:
+#                 sentence = line.strip().lower().split()
+#                 if 0 < len(sentence) < max_sent_length:
+#                     counter += 1
 
-        sentences = np.empty(counter, dtype=object)
-        counter = 0
-        with open(args.input_file) as f:
-            for line in f:
-                sentence = line.strip().lower().split()
-                if 0 < len(sentence) < max_sent_length:
-                    sentences[counter] = np.array(sentence)
-                    counter += 1
+#         sentences = np.empty(counter, dtype=object)
+#         counter = 0
+#         with open(args.input_file) as f:
+#             for line in f:
+#                 sentence = line.strip().lower().split()
+#                 if 0 < len(sentence) < max_sent_length:
+#                     sentences[counter] = np.array(sentence)
+#                     counter += 1
+                    
+#         array_file = True             
+#         if array_file:
+#             sentences = np.load(args.input_file)
+
+        
+        if text_file:
+            print('Loading input file')
+            counter = 0
+            with open(args.input_file) as f:
+                sentences = []
+                for line in f:
+                    sentence = line.strip().lower().split()
+                    if 0 < len(sentence) < max_sent_length:
+                        counter += 1
+
+            sentences = np.empty(counter, dtype=object)
+            counter = 0
+            with open(args.input_file) as f:
+                for line in f:
+                    sentence = line.strip().lower().split()
+                    if 0 < len(sentence) < max_sent_length:
+                        sentences[counter] = np.array(sentence)
+                        counter += 1          
+        if array_file:
+            if use_s3:
+                print('Loading Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_PATH))
+                client = boto3.resource('s3')
+                bucket = client.Bucket(S3_BUCKET)
+                sentences = np.load(BytesIO(bucket.Object(S3_WIKI_PATH).get()['Body'].read()))
+            else:
+                sentences = np.load(args.input_file)
+            
 
         print('Creating dataset')
         dataset = Dataset(sentences, batch_size, config.min_freq, device)
@@ -149,6 +191,11 @@ def main():
                         last_word_count = word_count
 
             print(total_loss.item())
+            log_dir = os.path.dirname('logs')
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            with open(os.path.join(log_dir, log_filename), 'a') as f:
+                f.write(str(epoch) + ' ' + str(total_loss.item()) + '\n')
 
         output_dir = os.path.dirname(args.wordsfile)
         if output_dir and not os.path.exists(output_dir):

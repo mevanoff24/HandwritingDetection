@@ -12,9 +12,9 @@ def parse_args():
                         help='specify input file')
     parser.add_argument('--config-file', '-c', default='./config.toml', type=str,
                         help='specify config toml file')
-    parser.add_argument('--wordsfile', '-w', default='models/embedding.vec',
+    parser.add_argument('--wordsfile', '-w', default='models_test/embedding.vec',
                         help='word embeddings output filename')
-    parser.add_argument('--modelfile', '-m', default='models/model.param',
+    parser.add_argument('--modelfile', '-m', default='models_test/model.param',
                         help='model output filename')
     parser.add_argument('--task', default='', type=str,
                         help='choose evaluation task from [mscc]')
