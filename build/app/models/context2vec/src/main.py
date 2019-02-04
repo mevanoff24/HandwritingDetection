@@ -15,9 +15,13 @@ from io import BytesIO
 
 array_file = True  
 text_file = False
-use_s3 = True
+use_s3 = False
+use_validation_set = True
+validation_data = '../../../../data/processed/rawwikitext-2-valid.npy'
 S3_BUCKET = 'handwrittingdetection'
-S3_WIKI_PATH = 'data/wiki_train/rawwikitext-2-train.npy'
+S3_WIKI_TRAIN_PATH = 'data/wiki_train/rawwikitext-2-train.npy'
+S3_WIKI_VAL_PATH = 'data/wiki_valid/rawwikitext-2-valid.npy'
+log_dir_name = 'logs'
 log_filename = 'log_dir1.txt'
 
 def run_inference_by_user_input(model,
@@ -40,7 +44,8 @@ def run_inference_by_user_input(model,
             target_pos = tokens.index('[]')
             return tokens, target_pos
 
-    ''' norm_weight
+    ''' 
+    norm_weight
     '''
     model.norm_embedding_weight(model.criterion.W)
 
@@ -126,12 +131,14 @@ def main():
                         counter += 1          
         if array_file:
             if use_s3:
-                print('Loading Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_PATH))
+                print('Loading Training Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_TRAIN_PATH))
                 client = boto3.resource('s3')
                 bucket = client.Bucket(S3_BUCKET)
-                sentences = np.load(BytesIO(bucket.Object(S3_WIKI_PATH).get()['Body'].read()))
+                sentences = np.load(BytesIO(bucket.Object(S3_WIKI_TRAIN_PATH).get()['Body'].read()))
             else:
                 sentences = np.load(args.input_file)
+                
+
             
 
         print('Creating dataset')
@@ -151,18 +158,39 @@ def main():
                             inference=False).to(device)
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-        print(batch_size, n_epochs, word_embed_size, hidden_size, device)
+        print('batch_size:{}, n_epochs:{}, word_embed_size:{}, hidden_size:{}, device:{}'.format(
+                                                batch_size, n_epochs, word_embed_size, hidden_size, device))
         print(model)
-
+        
+        if use_validation_set:
+            if use_s3:
+                print('Loading Validation Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_VAL_PATH))
+                val_sentences = np.load(BytesIO(bucket.Object(S3_WIKI_VAL_PATH).get()['Body'].read()))
+            else:
+                val_sentences = np.load(validation_data)
+            
+            print('Creating Validation dataset')
+            val_dataset = Dataset(val_sentences, batch_size, config.min_freq, device)
+            val_counter = np.array([val_dataset.vocab.freqs[word] if word in val_dataset.vocab.freqs else 0
+                                for word in val_dataset.vocab.itos])
+            
+        log_dir = os.path.dirname(log_dir_name)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+            
+            
+        print('Training Begins')
         interval = 1e6
         for epoch in range(n_epochs):
             begin_time = time.time()
             cur_at = begin_time
             total_loss = 0.0
+            val_total_loss = 0.0
             word_count = 0
             next_count = interval
             last_accum_loss = 0.0
             last_word_count = 0
+            model.train() #### ADDED 
             for iterator in dataset.get_batch_iter(batch_size):
                 for batch in iterator:
                     sentence = getattr(batch, 'sentence')
@@ -190,12 +218,46 @@ def main():
                         last_accum_loss = float(total_loss)
                         last_word_count = word_count
 
-            print(total_loss.item())
-            log_dir = os.path.dirname('logs')
-            if log_dir and not os.path.exists(log_dir):
-                os.makedirs(log_dir)
-            with open(os.path.join(log_dir, log_filename), 'a') as f:
-                f.write(str(epoch) + ' ' + str(total_loss.item()) + '\n')
+#             print(total_loss.item())
+
+            
+            # ---------
+            # VAL PHASE
+            model.eval()
+            for val_iterator in val_dataset.get_batch_iter(batch_size):
+                with torch.no_grad():
+                    for batch in val_iterator:
+                        val_sentence = getattr(batch, 'sentence')
+                        val_target = val_sentence[:, 1:-1]
+                        if val_target.size(0) == 0:
+                            continue
+                        val_loss = model(val_sentence, val_target)
+                        val_total_loss += val_loss.data.mean()
+
+    #                     minibatch_size, sentence_length = target.size()
+    #                     word_count += minibatch_size * sentence_length
+    #                     accum_mean_loss = float(total_loss)/word_count if total_loss > 0.0 else 0.0
+    #                     if word_count >= next_count:
+    #                         now = time.time()
+    #                         duration = now - cur_at
+    #                         throuput = float((word_count-last_word_count)) / (now - cur_at)
+    #                         cur_mean_loss = (float(total_loss)-last_accum_loss)/(word_count-last_word_count)
+    #                         print('{} words, {:.2f} sec, {:.2f} words/sec, {:.4f} accum_loss/word, {:.4f} cur_loss/word'
+    #                               .format(word_count, duration, throuput, accum_mean_loss, cur_mean_loss))
+    #                         next_count += interval
+    #                         cur_at = now
+    #                         last_accum_loss = float(total_loss)
+    #                         last_word_count = word_count
+
+            print('Train loss: {} -- Valid loss: {}'.format(total_loss.item(), val_total_loss.item()))
+            print()
+            
+    
+        # ---------
+            print(os.path.join(log_dir_name, log_filename))
+            print(log_dir_name + '/' + log_filename)
+            with open(os.path.join(log_dir_name, log_filename), 'a') as f:
+                f.write(str(epoch) + ' ' + str(total_loss.item()) + ' ' + str(val_total_loss.item()) + '\n')
 
         output_dir = os.path.dirname(args.wordsfile)
         if output_dir and not os.path.exists(output_dir):
