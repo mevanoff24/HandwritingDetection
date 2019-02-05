@@ -179,6 +179,8 @@ def main():
             os.makedirs(log_dir)
             
             
+
+        best_val_score = float('inf')
         print('Training Begins')
         interval = 1e6
         for epoch in range(n_epochs):
