@@ -34,7 +34,7 @@ PORT = 5000
 TMP_IMG_NAME = 'uploaded.jpg'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
-app = Flask(__name__)
+application = app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'I have a dream'
 app.config['UPLOADED_PHOTOS_DEST'] = TMPDIR

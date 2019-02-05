@@ -5,23 +5,49 @@
 
 <head>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<style>
+		.center {
+		  text-align: center;
+/*		  border: 3px solid green;*/
+		}
+		.border {
+			border: 3px solid green;
+		}
+	</style>
 </head>
 
 
 <body>
 
-{{left_text}}
-
-
-{% if file_url %}
 <br>
-<img src="{{ file_url }}">
-{% endif %}
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<div class='border'>
+	<div class="center">
+
+		{{left_text}}
 
 
-{{right_text}}
+		{% if file_url %}
+		<img src="{{ file_url }}">
+		{% endif %}
 
-<div>prediction: {{prediction}}</div>
+
+		{{right_text}}
+
+	</div>
+
+	<br>
+
+	<div class="center">Prediction: <b>{{prediction}}</b></div>
+
+</div>
 
 </body>
 

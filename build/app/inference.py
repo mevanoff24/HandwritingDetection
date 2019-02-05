@@ -196,21 +196,23 @@ class Inference():
             word = word.lower()
             # remove pad, bos, etc...
             if word not in bad_list:
+                try:
+                    features[word] = {}
+                    features[word]['score'] = score
+                    # match first and last character 
+                    first_char_match = word[0] == ocr_pred_lower[0]
+                    last_char_match = word[-1] == ocr_pred_lower[-1]
+                    features[word]['first_char_match'] = first_char_match
+                    features[word]['last_char_match'] = last_char_match
 
-                features[word] = {}
-                features[word]['score'] = score
-                # match first and last character 
-                first_char_match = word[0] == ocr_pred_lower[0]
-                last_char_match = word[-1] == ocr_pred_lower[-1]
-                features[word]['first_char_match'] = first_char_match
-                features[word]['last_char_match'] = last_char_match
-
-                num_chars = 0
-                for char in ocr_pred_lower:
-                    if char in word:
-                        num_chars += 1
-                    matches[word] = num_chars
-                features[word]['num_matches'] = matches[word]  
+                    num_chars = 0
+                    for char in ocr_pred_lower:
+                        if char in word:
+                            num_chars += 1
+                        matches[word] = num_chars
+                    features[word]['num_matches'] = matches[word] 
+                except:
+                    pass 
 
         return features
 
