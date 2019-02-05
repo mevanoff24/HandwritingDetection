@@ -15,4 +15,5 @@ torch==1.0.0
 tensorflow==1.12.0
 wtforms
 torchtext
-toml
+opencv-python
+uuid
