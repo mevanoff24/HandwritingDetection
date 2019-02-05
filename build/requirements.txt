@@ -17,3 +17,4 @@ wtforms
 torchtext
 opencv-python
 uuid
+toml
