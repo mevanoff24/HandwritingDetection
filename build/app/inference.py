@@ -91,7 +91,7 @@ class Inference():
         self.sess = tf.Session()
         K.set_session(self.sess)
 
-        ocr_model_path = 'models/ocr/models/ocr_model_best_6.98.hdf5'
+        ocr_model_path = 'models/ocr/models/weights-improvement2-10-01-3.00.hdf5'
         self.ocr_model = load_model(ocr_model_path, custom_objects={'<lambda>': lambda y_true, y_pred: y_pred})
         
     def preprocess_image(self, img_path, img_width, img_height):
@@ -196,21 +196,23 @@ class Inference():
             word = word.lower()
             # remove pad, bos, etc...
             if word not in bad_list:
+                try:
+                    features[word] = {}
+                    features[word]['score'] = score
+                    # match first and last character 
+                    first_char_match = word[0] == ocr_pred_lower[0]
+                    last_char_match = word[-1] == ocr_pred_lower[-1]
+                    features[word]['first_char_match'] = first_char_match
+                    features[word]['last_char_match'] = last_char_match
 
-                features[word] = {}
-                features[word]['score'] = score
-                # match first and last character 
-                first_char_match = word[0] == ocr_pred_lower[0]
-                last_char_match = word[-1] == ocr_pred_lower[-1]
-                features[word]['first_char_match'] = first_char_match
-                features[word]['last_char_match'] = last_char_match
-
-                num_chars = 0
-                for char in ocr_pred_lower:
-                    if char in word:
-                        num_chars += 1
-                    matches[word] = num_chars
-                features[word]['num_matches'] = matches[word]  
+                    num_chars = 0
+                    for char in ocr_pred_lower:
+                        if char in word:
+                            num_chars += 1
+                        matches[word] = num_chars
+                    features[word]['num_matches'] = matches[word] 
+                except:
+                    pass 
 
         return features
 

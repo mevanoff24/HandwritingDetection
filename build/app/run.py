@@ -4,9 +4,11 @@ from wtforms import Form, TextAreaField, validators
 
 import sys
 import os
+import shutil
 import pandas as pd 
 import numpy as np 
 import json
+import uuid
 
 # from .config import *
 
@@ -32,7 +34,7 @@ PORT = 5000
 TMP_IMG_NAME = 'uploaded.jpg'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
-app = Flask(__name__)
+application = app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'I have a dream'
 app.config['UPLOADED_PHOTOS_DEST'] = TMPDIR
@@ -93,6 +95,15 @@ class SubmissionFormRight(Form):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
+	# remove old images
+	for the_file in os.listdir(app.config['UPLOAD_FOLDER']):
+		file_path = os.path.join(app.config['UPLOAD_FOLDER'], the_file)
+		try:
+			if os.path.isfile(file_path):
+				os.unlink(file_path)
+		except Exception as e:
+			print(e)
+
 	left_word_form = SubmissionFormLeft(request.form)
 	right_word_form = SubmissionFormRight(request.form)
 	return render_template('add_image.html', left_word_form=left_word_form, 
@@ -100,14 +111,15 @@ def upload_file():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if request.method == 'POST':
-        file = request.files['file']
-        extension = os.path.splitext(file.filename)[1]
-        f_name = 'uploaded' + extension
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], f_name)
-        file.save(save_path)
-        session['file_url'] = save_path
-    return json.dumps({'filename':f_name})
+	if request.method == 'POST':
+		file = request.files['file']
+		extension = os.path.splitext(file.filename)[1]
+		# f_name = 'uploaded' + extension
+		f_name = str(uuid.uuid4()) + extension
+		save_path = os.path.join(app.config['UPLOAD_FOLDER'], f_name)
+		file.save(save_path)
+		session['file_url'] = save_path
+	return json.dumps({'filename':f_name})
 
 
 # @app.route('/')

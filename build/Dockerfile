@@ -1,9 +1,14 @@
 FROM ubuntu:latest
-RUN apt-get update -y
-RUN apt-get install -y python-pip python-dev build-essential
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+  && apt-get install -y python3-pip python3-dev build-essential python-opencv \
+  && cd /usr/local/bin \
+  && ln -s /usr/bin/python3 python \
+  && pip3 install --upgrade pip
+
 COPY . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
-ENTRYPOINT ["python"]
+RUN pip3 install -r requirements.txt
+ENTRYPOINT ["python3"]
 CMD ["app/run.py"]
 
