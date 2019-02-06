@@ -16,7 +16,7 @@ class Config:
         self.dropout = float(nets.get('dropout', 0.0))
 
         train = config.get('train', {})
-        self.n_epochs = int(train.get('n_epochs', 10))
+        self.n_epochs = int(train.get('n_epochs', 1))
         self.batch_size = int(train.get('batch_size', 100))
         self.min_freq = int(train.get('min_freq', 1))
         self.ns_power = float(train.get('ns_power', 0.75))
