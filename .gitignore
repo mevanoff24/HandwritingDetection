@@ -4,3 +4,5 @@ data/raw/*
 build/app/models/context2vec/models/*
 build/app/models/ocr/models/*
 build/app/models/embeddings/*
+build/app/models/context2vec/models_test/*
+build/app/models/context2vec/models_103/*
