@@ -6,3 +6,5 @@ build/app/models/ocr/models/*
 build/app/models/embeddings/*
 build/app/models/context2vec/models_test/*
 build/app/models/context2vec/models_103/*
+build/app/models/OCRBeamSearch/model/snapshot-38*
+build/app/models/OCRBeamSearch/model/checkpoint
