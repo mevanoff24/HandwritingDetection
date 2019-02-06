@@ -167,7 +167,6 @@ def create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test):
 
 def subset_data(word_level_df, greater_than_val, less_than_val):
     word_level_df['token_len'] = word_level_df.token.apply(len)
-    print(word_level_df['token_len'].describe())
     word_level_df.sort_values('token_len', inplace=True)
     word_level_df = word_level_df[(word_level_df['token_len'] >= greater_than_val) & (word_level_df['token_len'] < less_than_val)]
     return word_level_df
@@ -193,6 +192,8 @@ if __name__ == '__main__':
         
         word_level_train = subset_data(word_level_train, greater_than_val, less_than_val)
         word_level_test = subset_data(word_level_test, greater_than_val, less_than_val)
+        # suffle test set --- NEEDED??
+        word_level_test = word_level_test.sample(frac=1)
 
         samples_train, samples_test = create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test)
 
@@ -212,7 +213,7 @@ if __name__ == '__main__':
 
     model = get_model(word_level_train, word_level_test, img_w, max_text_len=max_text_len, train_samples=samples_train, 
                       test_samples=samples_test, letters=letters, sample_size=None, use_s3=USE_S3, 
-                      save_path='../models/ocr_2_10.h5')
+                      save_path='../models/ocr_2_10_lr_01_size_128.h5')
 
     sess.close()
 # SGD 2, 10 -- loss: 7.4965 - val_loss: 6.9792
@@ -252,4 +253,49 @@ if __name__ == '__main__':
 # less_than_val = 10
 
 
+
+# saving model to ../models/weights-improvement2-10-01-4.09.hdf5
+# 73616/73616 [==============================] - 6789s 92ms/step - loss: 1.9752 - val_loss: 4.0863
+# Saving model to ../models/ocr_2_10_lr_01_size_256.h5
+
+# USE_S3 = False
+# img_w = 128 
+# img_h = 64
+# conv_filters = 16
+# kernel_size = (3, 3)
+# pool_size = 2
+# time_dense_size = 32
+# rnn_size = 256
+# batch_size = 64
+# downsample_factor = pool_size ** 2
+# max_text_len = 10
+# activation = 'relu'
+# learning_rate = 0.01
+# epochs = 1
+# greater_than_val = 2
+# less_than_val = 10
+
+
+
+# 73615/73616 [============================>.] - ETA: 0s - loss: 2.1937
+# Epoch 00001: val_loss improved from inf to 2.99729, saving model to ../models/weights-improvement2-10-01-3.00.hdf5
+# 73616/73616 [==============================] - 6757s 92ms/step - loss: 2.1937 - val_loss: 2.9973
+# Saving model to ../models/ocr_2_10_lr_01_size_128.h5
+
+# USE_S3 = False
+# img_w = 128 
+# img_h = 64
+# conv_filters = 16
+# kernel_size = (3, 3)
+# pool_size = 2
+# time_dense_size = 32
+# rnn_size = 128
+# batch_size = 64
+# downsample_factor = pool_size ** 2
+# max_text_len = 10
+# activation = 'relu'
+# learning_rate = 0.01
+# epochs = 1
+# greater_than_val = 2
+# less_than_val = 10
 
