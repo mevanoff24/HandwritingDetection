@@ -32,6 +32,7 @@ from models.OCRBeamSearch.src.DataLoader import DataLoader, Batch
 
 from collections import defaultdict
 from operator import itemgetter
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 
 # tf.reset_default_graph()
@@ -55,11 +56,16 @@ class Inference():
         self.build_language_model()
 #         self.build_ocr_model()
         self.build_beam_ocr_model()
+    
+        self.stemmer = PorterStemmer()
+        self.lemma = WordNetLemmatizer()
         
-    def build_language_model(self):
+    def build_language_model(self, model_dir='models/context2vec/models_103'):
         # LANGUAGE MODEL
-        modelfile = 'models/context2vec/models/model.param'
-        wordsfile = 'models/context2vec/models/embedding.vec'
+        modelfile = os.path.join(model_dir, 'model.param')
+        wordsfile = os.path.join(model_dir, 'embedding.vec')
+#         modelfile = 'models/context2vec/models/model.param'
+#         wordsfile = 'models/context2vec/models/embedding.vec'
         config_file = modelfile+'.config.json'
         config_dict = read_config(config_file)
         self.lm_model = Context2vec(vocab_size=config_dict['vocab_size'],
@@ -137,7 +143,7 @@ class Inference():
             target_pos = tokens.index('[]')
             return tokens, target_pos
         
-    def run_lm_inference_by_user_input(self, sentence, topK=30):
+    def run_lm_inference_by_user_input(self, sentence, topK=10):
 
         # evaluation mode 
         self.lm_model.eval()
@@ -162,8 +168,8 @@ class Inference():
         img = preprocess(cv2.imread(img_path, cv2.IMREAD_GRAYSCALE), Model.imgSize)
         batch = Batch(None, [img])
         (recognized, probability) = self.beam_ocr_model.inferBatch(batch, True)
-        print('Recognized:', '"' + recognized[0] + '"')
-        print('Probability:', probability[0])
+#         print('Recognized:', '"' + recognized[0] + '"')
+#         print('Probability:', probability[0])
         return (recognized, probability)
     
     def run_ocr_inference_by_user_image(self, img):
@@ -190,8 +196,8 @@ class Inference():
 
         bins = defaultdict(lambda: 'na', bins)
 
-#         ocr_len = len([x for x in ocr_pred[0]])
-        ocr_len = len([x for x in ocr_pred])
+        ocr_len = len([x for x in ocr_pred[0]])
+#         ocr_len = len([x for x in ocr_pred])
         pred_bins = [k for k, v in bins.items() if ocr_len in v]
         # ----------------------------------
 
@@ -200,8 +206,8 @@ class Inference():
         matches = {}
         matches_non_ordered = {}
 
-#         ocr_pred_lower = ocr_pred[0].lower()
-        ocr_pred_lower = ocr_pred.lower()
+        ocr_pred_lower = ocr_pred[0].lower()
+#         ocr_pred_lower = ocr_pred.lower()
 
         for lm_pred in lm_preds:
             score, word = lm_pred[0], lm_pred[1].rstrip()
@@ -228,11 +234,75 @@ class Inference():
 
         return features
 
+    def create_features_improved(self, lm_preds, ocr_pred, ocr_prob):
+
+        # not used currently
+        # ----------------------------------
+        bins = {
+            'small': list(range(0, 3)),
+            'small-mid': list(range(2, 6)),
+            'mid': list(range(4, 8)),
+            'mid-large': list(range(6, 10)),
+            'large': list(range(8, 12)),
+            'large-big': list(range(10, 14)),
+            'big': list(range(12, 100)),
+        }
+
+        bins = defaultdict(lambda: 'na', bins)
+
+        ocr_len = len([x for x in ocr_pred[0]])
+#         ocr_len = len([x for x in ocr_pred])
+        pred_bins = [k for k, v in bins.items() if ocr_len in v]
+        # ----------------------------------
+
+        features = {}
+        bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>'] # ADD foul words
+        matches = {}
+        matches_non_ordered = {}
+
+        ocr_pred_lower = ocr_pred[0].lower()
+
+        for lm_pred in lm_preds:
+            score, word = lm_pred[0], lm_pred[1].rstrip()
+            word = word.lower()
+            # remove pad, bos, etc...
+            if word not in bad_list:
+                try:
+                    features[word] = {}
+                    features[word]['ocr_prob'] = score
+                    features[word]['score'] = score
+                    # exact match
+                    exact = word == ocr_pred_lower
+                    exact_stem = self.stemmer.stem(word) == self.stemmer.stem(ocr_pred_lower)
+                    exact_lemma = self.lemma.lemmatize(word) == self.lemma.lemmatize(ocr_pred_lower)
+                    features[word]['exact'] = exact
+                    features[word]['exact_stem'] = exact_stem
+                    features[word]['exact_lemma'] = exact_lemma
+                    # match first and last character 
+                    first_char_match = word[0] == ocr_pred_lower[0]
+                    last_char_match = word[-1] == ocr_pred_lower[-1]
+                    features[word]['first_char_match'] = first_char_match
+                    features[word]['last_char_match'] = last_char_match
+
+                    num_chars = 0
+                    for char in ocr_pred_lower:
+                        if char in word:
+                            num_chars += 1
+                        matches[word] = num_chars
+                    features[word]['num_matches'] = matches[word] 
+                except:
+                    pass 
+
+        return features
+
 
     def final_scores(self, features):
         final_scores = {}
 
         for word, feature_dict in features.items():
+            if feature_dict['exact'] or feature_dict['exact_stem'] or feature_dict['exact_lemma']:
+#                 print('Perfect Match', word)
+                return word
             final_score = 1
             first_char_match = feature_dict['first_char_match']
             last_char_match = feature_dict['last_char_match']
@@ -250,19 +320,21 @@ class Inference():
         pass
     
     
-    def predict(self, sentence, img_path=64):
+    def predict(self, sentence, img_path=None, ind_preds=None):
         lm_preds = self.run_lm_inference_by_user_input(sentence)
         
 #         img = self.preprocess_image(img_path, self.img_width, self.img_height)
 #         ocr_pred = self.run_ocr_inference_by_user_image(img)
         ocr_pred, ocr_pred_prob = self.run_beam_ocr_inference_by_user_image(img_path)
-#         print(ocr_pred, ocr_pred_prob)
     
-        features = self.create_features(lm_preds, ocr_pred[0])
+#         features = self.create_features(lm_preds, ocr_pred, ocr_pred_prob)
+        features = self.create_features_improved(lm_preds, ocr_pred, ocr_pred_prob)
         final_pred = self.final_scores(features)
-    
         # return top K? And use MAP @ K ??
-        return final_pred
+        out = final_pred
+        if ind_preds:
+            out = final_pred, lm_preds[1], ocr_pred # lm_pred 1 is alwas UNK? 
+        return out
 
 
 if __name__ == '__main__':

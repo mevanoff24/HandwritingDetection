@@ -42,6 +42,7 @@ app.config['ALLOWEDEXTENSIONS'] = ALLOWED_EXTENSIONS
 app.config['UPLOAD_FOLDER'] = 'static/Uploads'
 
 
+inference_model = Inference(img_width=128, img_height=64, device='cpu')
 
 # photos = UploadSet('photos', IMAGES)
 # configure_uploads(app, photos)
@@ -135,7 +136,6 @@ def main():
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
-	inference_model = Inference(img_width=128, img_height=64, device='cpu')
 
 	file_url = session.get('file_url', None)
 	# filename = session.get('filename', None)
@@ -149,7 +149,7 @@ def predict():
 		left_text = request.form['left_text_form']
 		right_text = request.form['right_text_form']
 		# file_url = photos.url(filename)
-		print('FFFFFFFFFF', left_text, right_text, file_url)
+		print(left_text, right_text, file_url)
 	# print(file_url)
 		X = left_text + ' [] ' + right_text
 		prediction = inference_model.predict(X, file_url)
