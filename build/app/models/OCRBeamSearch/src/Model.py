@@ -116,26 +116,31 @@ class Model:
 			self.decoder = tf.nn.ctc_beam_search_decoder(inputs=self.ctcIn3dTBC, sequence_length=self.seqLen, beam_width=50, merge_repeated=False)
 		elif self.decoderType == DecoderType.WordBeamSearch:
 			# import compiled word beam search operation (see https://github.com/githubharald/CTCWordBeamSearch)
-			word_beam_search_module = tf.load_op_library('TFWordBeamSearch.so')
+# 			word_beam_search_module = tf.load_op_library('TFWordBeamSearch.so')
+			word_beam_search_module = tf.load_op_library('models/OCRBeamSearch/src/TFWordBeamSearch.so')
 
 			# prepare information about language (dictionary, characters in dataset, characters forming words) 
 			chars = str().join(self.charList)
-			wordChars = open('../model/wordCharList.txt').read().splitlines()[0]
-			corpus = open('../data/corpus.txt').read()
+# 			wordChars = open('../model/wordCharList.txt').read().splitlines()[0]
+			wordChars = open('models/OCRBeamSearch/model/wordCharList.txt').read().splitlines()[0]
+# 			corpus = open('../data/corpus.txt').read()
+			corpus = open('models/OCRBeamSearch/data/corpus.txt').read()
 
 			# decode using the "Words" mode of word beam search
-			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, dim=2), 50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))
+# 			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, dim=2), 50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))
+			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, axis=2), 50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))
 
 
 	def setupTF(self):
 		"initialize TF"
-		print('Python: '+sys.version)
-		print('Tensorflow: '+tf.__version__)
+# 		print('Python: '+sys.version)
+# 		print('Tensorflow: '+tf.__version__)
 
 		sess=tf.Session() # TF session
 
 		saver = tf.train.Saver(max_to_keep=1) # saver saves model to file
-		modelDir = '../model/'
+# 		modelDir = '../model/'
+		modelDir = 'models/OCRBeamSearch/model/'        
 		latestSnapshot = tf.train.latest_checkpoint(modelDir) # is there a saved model?
 
 		# if model must be restored (for inference), there must be a snapshot
@@ -144,10 +149,10 @@ class Model:
 
 		# load saved model if available
 		if latestSnapshot:
-			print('Init with stored values from ' + latestSnapshot)
+# 			print('Init with stored values from ' + latestSnapshot)
 			saver.restore(sess, latestSnapshot)
 		else:
-			print('Init with new values')
+# 			print('Init with new values')
 			sess.run(tf.global_variables_initializer())
 
 		return (sess,saver)
@@ -244,4 +249,5 @@ class Model:
 		"save model to file"
 		self.snapID += 1
 		self.saver.save(self.sess, '../model/snapshot', global_step=self.snapID)
+        
  

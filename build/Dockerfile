@@ -6,6 +6,7 @@ RUN apt-get update \
   && ln -s /usr/bin/python3 python \
   && pip3 install --upgrade pip
 CMD ["sh", "environment.sh"]
+CMD ["sh", "beam_search.sh"]
 
 COPY . /app
 WORKDIR /app
