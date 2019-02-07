@@ -15,7 +15,7 @@ import uuid
 
 import os
 from flask import Flask, render_template
-from flask_uploads import UploadSet, configure_uploads, IMAGES, patch_request_class
+# from flask_uploads import UploadSet, configure_uploads, IMAGES, patch_request_class
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import SubmitField
@@ -43,14 +43,14 @@ app.config['UPLOAD_FOLDER'] = 'static/Uploads'
 
 
 
-photos = UploadSet('photos', IMAGES)
-configure_uploads(app, photos)
-patch_request_class(app)  # set maximum file size, default is 16MB
+# photos = UploadSet('photos', IMAGES)
+# configure_uploads(app, photos)
+# patch_request_class(app)  # set maximum file size, default is 16MB
 
 
-class UploadForm(FlaskForm):
-	photo = FileField(validators=[FileAllowed(photos, u'Image only!'), FileRequired(u'File was empty!')])
-	submit = SubmitField(u'Upload')
+# class UploadForm(FlaskForm):
+# 	photo = FileField(validators=[FileAllowed(photos, u'Image only!'), FileRequired(u'File was empty!')])
+# 	submit = SubmitField(u'Upload')
 
 
 

@@ -21,34 +21,28 @@ import itertools
 from models.ocr.src.config import letters
 
 
-# TODO 
-# -- need to add if the model is not loaded -- error print statement 
-
-
-# LM model imports 
-import os
-import time
-import torch
-from torch import optim
-from models.context2vec.src.eval.mscc import mscc_evaluation
-from models.context2vec.src.core.nets import Context2vec
-from models.context2vec.src.util.args import parse_args
-from models.context2vec.src.util.batch import Dataset
-from models.context2vec.src.util.config import Config
-from models.context2vec.src.util.io import write_embedding, write_config, read_config, load_vocab
-
-
-# OCR model imports 
-import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.models import load_model
-import numpy as np
+# OCRBeamSearch model
+from models.OCRBeamSearch.src.Model import Model, DecoderType
+from models.OCRBeamSearch.src.SamplePreprocessor import preprocess
+import sys
 import cv2
-import itertools
-from models.ocr.src.config import letters
+import editdistance
+from models.OCRBeamSearch.src.DataLoader import DataLoader, Batch
+
 
 from collections import defaultdict
 from operator import itemgetter
+
+
+# tf.reset_default_graph()
+
+class FilePaths:
+    "filenames and paths to data"
+    fnCharList = 'models/OCRBeamSearch/model/charList.txt'
+    fnAccuracy = 'models/OCRBeamSearch/model/accuracy.txt'
+    fnTrain = 'models/OCRBeamSearch/data/'
+    fnInfer = 'models/OCRBeamSearch/data/test.png'
+    fnCorpus = 'models/OCRBeamSearch/data/corpus.txt'
 
 
 
@@ -59,7 +53,8 @@ class Inference():
         self.img_width = img_width
         self.img_height = img_height
         self.build_language_model()
-        self.build_ocr_model()
+#         self.build_ocr_model()
+        self.build_beam_ocr_model()
         
     def build_language_model(self):
         # LANGUAGE MODEL
@@ -86,7 +81,16 @@ class Inference():
         self.bos_token = config_dict['bos_token']
         self.eos_token = config_dict['eos_token']
 
-        
+
+    def build_beam_ocr_model(self, decoderType = 'wordbeamsearch'):
+        # Beam Search OCR model
+        decoderType = DecoderType.BestPath
+        if 'beamsearch':
+            decoderType = DecoderType.BeamSearch
+        if 'wordbeamsearch':
+            decoderType = DecoderType.WordBeamSearch
+        self.beam_ocr_model = Model(open(FilePaths.fnCharList).read(), decoderType, mustRestore=True)
+               
     def build_ocr_model(self):
         self.sess = tf.Session()
         K.set_session(self.sess)
@@ -152,6 +156,15 @@ class Inference():
             output.append((value.item(), self.itos[key.item()]))
 #             print(value.item(), self.itos[key.item()])
         return output
+
+    def run_beam_ocr_inference_by_user_image(self, img_path):
+        "recognize text in image provided by file path"
+        img = preprocess(cv2.imread(img_path, cv2.IMREAD_GRAYSCALE), Model.imgSize)
+        batch = Batch(None, [img])
+        (recognized, probability) = self.beam_ocr_model.inferBatch(batch, True)
+        print('Recognized:', '"' + recognized[0] + '"')
+        print('Probability:', probability[0])
+        return (recognized, probability)
     
     def run_ocr_inference_by_user_image(self, img):
         net_inp = self.ocr_model.get_layer(name='the_input').input
@@ -159,9 +172,6 @@ class Inference():
         net_out_value = self.sess.run(net_out, feed_dict={net_inp: img})
         pred_texts = self._decode_batch(net_out_value)
         return pred_texts
-    
-    from collections import defaultdict
-    from operator import itemgetter
 
 
     def create_features(self, lm_preds, ocr_pred):
@@ -180,7 +190,8 @@ class Inference():
 
         bins = defaultdict(lambda: 'na', bins)
 
-        ocr_len = len([x for x in ocr_pred[0]])
+#         ocr_len = len([x for x in ocr_pred[0]])
+        ocr_len = len([x for x in ocr_pred])
         pred_bins = [k for k, v in bins.items() if ocr_len in v]
         # ----------------------------------
 
@@ -189,7 +200,8 @@ class Inference():
         matches = {}
         matches_non_ordered = {}
 
-        ocr_pred_lower = ocr_pred[0].lower()
+#         ocr_pred_lower = ocr_pred[0].lower()
+        ocr_pred_lower = ocr_pred.lower()
 
         for lm_pred in lm_preds:
             score, word = lm_pred[0], lm_pred[1].rstrip()
@@ -238,13 +250,15 @@ class Inference():
         pass
     
     
-    def predict(self, sentence, img_path):
+    def predict(self, sentence, img_path=64):
         lm_preds = self.run_lm_inference_by_user_input(sentence)
         
-        img = self.preprocess_image(img_path, self.img_width, self.img_height)
-        ocr_pred = self.run_ocr_inference_by_user_image(img)
-
-        features = self.create_features(lm_preds, ocr_pred)
+#         img = self.preprocess_image(img_path, self.img_width, self.img_height)
+#         ocr_pred = self.run_ocr_inference_by_user_image(img)
+        ocr_pred, ocr_pred_prob = self.run_beam_ocr_inference_by_user_image(img_path)
+#         print(ocr_pred, ocr_pred_prob)
+    
+        features = self.create_features(lm_preds, ocr_pred[0])
         final_pred = self.final_scores(features)
     
         # return top K? And use MAP @ K ??
@@ -256,10 +270,7 @@ if __name__ == '__main__':
     right_text = 'the house'
 
     sentence = left_text + ' [] ' + right_text
-
-    img_width = 128
-    img_height = 64
-    img_path = '../../data/raw/word_level/c03/c03-096f/c03-096f-03-05.png'
+    img_path = '../../data/samples/c03-096f-03-05.png'
 
 
     inference = Inference()
