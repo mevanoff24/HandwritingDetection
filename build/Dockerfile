@@ -5,12 +5,14 @@ RUN apt-get update \
   && cd /usr/local/bin \
   && ln -s /usr/bin/python3 python \
   && pip3 install --upgrade pip
+
 CMD ["sh", "environment.sh"]
 CMD ["sh", "beam_search.sh"]
 
 COPY . /app
 WORKDIR /app
 RUN pip3 install -r requirements.txt
+RUN python -m nltk.downloader wordnet
 ENTRYPOINT ["python3"]
 CMD ["app/run.py"]
 

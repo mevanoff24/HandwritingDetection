@@ -256,7 +256,7 @@ class Inference():
         # ----------------------------------
 
         features = {}
-        bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>'] # ADD foul words
+        bad_list = []#['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>'] # ADD foul words
         matches = {}
         matches_non_ordered = {}
 
@@ -290,7 +290,8 @@ class Inference():
                             num_chars += 1
                         matches[word] = num_chars
                     features[word]['num_matches'] = matches[word] 
-                except:
+                except Exception as e:
+                    print(str(e))
                     pass 
 
         return features
@@ -329,6 +330,7 @@ class Inference():
     
 #         features = self.create_features(lm_preds, ocr_pred, ocr_pred_prob)
         features = self.create_features_improved(lm_preds, ocr_pred, ocr_pred_prob)
+        print(lm_preds, ocr_pred, ocr_pred_prob)
         final_pred = self.final_scores(features)
         # return top K? And use MAP @ K ??
         out = final_pred

@@ -41,6 +41,9 @@ app.config['UPLOADED_PHOTOS_DEST'] = TMPDIR
 app.config['ALLOWEDEXTENSIONS'] = ALLOWED_EXTENSIONS
 app.config['UPLOAD_FOLDER'] = 'static/Uploads'
 
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 
 inference_model = Inference(img_width=128, img_height=64, device='cpu')
 
@@ -55,16 +58,20 @@ inference_model = Inference(img_width=128, img_height=64, device='cpu')
 
 
 
+# class SubmissionFormLeft(Form):
+# 	left_text_form = TextAreaField('', 
+# 					[validators.DataRequired(),
+# 					validators.length(min = None)])
 class SubmissionFormLeft(Form):
-	left_text_form = TextAreaField('', 
-					[validators.DataRequired(),
-					validators.length(min = 1)])
-
-
+	left_text_form = TextAreaField('')
 class SubmissionFormRight(Form):
-	right_text_form = TextAreaField('', 
-					[validators.DataRequired(),
-					validators.length(min = 1)])
+	right_text_form = TextAreaField('')
+
+
+# class SubmissionFormRight(Form):
+# 	right_text_form = TextAreaField('', 
+# 					[validators.DataRequired(),
+# 					validators.length(min = 1)])
 
 
 # load Inference class
