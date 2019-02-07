@@ -21,3 +21,4 @@ torchtext
 opencv-python
 uuid
 toml
+editdistance

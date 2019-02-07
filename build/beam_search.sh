@@ -75,7 +75,7 @@ python testCustomOp.py
 cd ~/Desktop/Insight/HandwritingDetection/build/app/models/OCRBeamSearch/src
 cp CTCWordBeamSearch/cpp/proj/TFWordBeamSearch.so .
 
-
-# cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/model/
-# unzip model.zip
-# rm model.zip
+# unzip model
+cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/model/
+unzip model.zip
+rm model.zip
