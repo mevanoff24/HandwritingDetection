@@ -1,9 +1,7 @@
-%%bash
-
 #!/bin/bash
 cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/
 
-git clone https://github.com/githubharald/CTCWordBeamSearch.git 
+git clone https://github.com/githubharald/CTCWordBeamSearch.git
 cd CTCWordBeamSearch/cpp/proj/
 
 
@@ -48,7 +46,7 @@ if [ "$TF_VERSION" == "1.3.0" ]; then
 elif [ "$TF_VERSION" == "1.4.0" ]; then
 
 	echo "Compiling for TF 1.4.0 now ..."
-	
+
 	TF_INC=$(python3 -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')
 	TF_LIB=$(python3 -c 'import tensorflow as tf; print(tf.sysconfig.get_lib())')
 
@@ -58,7 +56,7 @@ elif [ "$TF_VERSION" == "1.4.0" ]; then
 else
 	echo "Compiling for TF 1.5.0 or 1.6.0 now ..."
 
-	TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
+	TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') ) 
 	TF_LFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )
 
 
