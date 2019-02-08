@@ -4,14 +4,17 @@ RUN apt-get update \
   && apt-get install -y python3-pip python3-dev build-essential python-opencv git \
   && cd /usr/local/bin \
   && ln -s /usr/bin/python3 python \
-  && pip3 install --upgrade pip
+  && pip3 install --upgrade pip \ 
+  %% pip3 install awscli
 
 RUN cd /tmp \
   && git clone https://github.com/mevanoff24/HandwritingDetection.git \
   && cd HandwritingDetection \
   && cd build \
   && chmod +x ./environment.sh \
-  && chmod +x ./beam_search.sh
+  && chmod +x ./beam_search.sh \ 
+  && ./environment.sh \
+  && ./beam_search.sh
 
 COPY . /app
 WORKDIR /app
