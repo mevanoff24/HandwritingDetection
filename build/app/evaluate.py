@@ -229,7 +229,7 @@ if __name__ == '__main__':
     # evaluate model 
     raw_correct, stem_correct, average_total_similarity = evaluate_model(X_test, y_test, 
                                                     word_level_df_test, subset=10000, 
-                                                ind_preds=True, only_ocr=False, only_lm=True)
+                                                ind_preds=True, only_ocr=False, only_lm=False)
     
     
     
@@ -245,4 +245,11 @@ if __name__ == '__main__':
 # Stem correct 0.2626880897730171
 # Average Cosine Similarity 4.915273975695297. Coverage: 0.0
 # Time to evaluate 10000 sample: 5048.670153617859
+# Number of bad lines 2158
+
+
+# Raw correct 0.9074215761285387
+# Stem correct 0.9118847232848764
+# Average Cosine Similarity 0.5890220775711446. Coverage: 0.0
+# Time to evaluate 10000 sample: 5070.999721050262
 # Number of bad lines 2158

@@ -33,6 +33,7 @@ from models.OCRBeamSearch.src.DataLoader import DataLoader, Batch
 from collections import defaultdict
 from operator import itemgetter
 from nltk.stem import PorterStemmer, WordNetLemmatizer
+import Levenshtein
 
 
 # tf.reset_default_graph()
@@ -202,7 +203,7 @@ class Inference():
         # ----------------------------------
 
         features = {}
-        bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>'] # ADD foul words
+        bad_list = []#['<PAD>', '<BOS>', '<EOS>', '<UNK>'] # ADD foul words
         matches = {}
         matches_non_ordered = {}
 
@@ -252,68 +253,117 @@ class Inference():
 
         ocr_len = len([x for x in ocr_pred[0]])
 #         ocr_len = len([x for x in ocr_pred])
-        pred_bins = [k for k, v in bins.items() if ocr_len in v]
+        ocr_pred_bins = [k for k, v in bins.items() if ocr_len in v]
+#         print(ocr_pred_bins)
         # ----------------------------------
 
         features = {}
-        bad_list = []#['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>'] # ADD foul words
+        bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>'] # ADD foul words
         matches = {}
         matches_non_ordered = {}
 
         ocr_pred_lower = ocr_pred[0].lower()
 
         for lm_pred in lm_preds:
-            score, word = lm_pred[0], lm_pred[1].rstrip()
+            lm_prob, word = lm_pred[0], lm_pred[1].rstrip()
             word = word.lower()
             # remove pad, bos, etc...
             if word not in bad_list:
-                try:
-                    features[word] = {}
-                    features[word]['ocr_prob'] = score
-                    features[word]['score'] = score
-                    # exact match
-                    exact = word == ocr_pred_lower
-                    exact_stem = self.stemmer.stem(word) == self.stemmer.stem(ocr_pred_lower)
-                    exact_lemma = self.lemma.lemmatize(word) == self.lemma.lemmatize(ocr_pred_lower)
-                    features[word]['exact'] = exact
-                    features[word]['exact_stem'] = exact_stem
-                    features[word]['exact_lemma'] = exact_lemma
-                    # match first and last character 
-                    first_char_match = word[0] == ocr_pred_lower[0]
-                    last_char_match = word[-1] == ocr_pred_lower[-1]
-                    features[word]['first_char_match'] = first_char_match
-                    features[word]['last_char_match'] = last_char_match
+#                 try:
+                features[word] = {}
+                features[word]['ocr_prob'] = ocr_prob[0]
+                features[word]['lm_prob'] = lm_prob
+                # length 
+                word_len = len(word)
+                features[word]['exact_length_match'] = word_len == ocr_len
 
-                    num_chars = 0
-                    for char in ocr_pred_lower:
-                        if char in word:
-                            num_chars += 1
-                        matches[word] = num_chars
-                    features[word]['num_matches'] = matches[word] 
-                except Exception as e:
-                    print(str(e))
-                    pass 
+                word_bins = [k for k, v in bins.items() if word_len in v]
+                features[word]['bin_length_match'] = False
+                for bin_ in ocr_pred_bins:
+                    if bin_ in word_bins:
+                        features[word]['bin_length_match'] = True
 
+                # levenshtein distance
+                features[word]['levenshtein'] = Levenshtein.ratio(word, ocr_pred_lower)
+                # editdistance (1 / dist) so less is better 
+                features[word]['editdistance'] = 1 / (editdistance.eval(word, ocr_pred_lower) + 0.001) # for divide by zero error
+
+                # exact match
+                exact = word == ocr_pred_lower
+                exact_stem = self.stemmer.stem(word) == self.stemmer.stem(ocr_pred_lower)
+                exact_lemma = self.lemma.lemmatize(word) == self.lemma.lemmatize(ocr_pred_lower)
+                exact_length = word == ocr_pred_lower
+                features[word]['exact'] = exact
+                features[word]['exact_stem'] = exact_stem
+                features[word]['exact_lemma'] = exact_lemma
+                # match first and last character 
+                first_char_match = word[0] == ocr_pred_lower[0]
+                last_char_match = word[-1] == ocr_pred_lower[-1]
+                features[word]['first_char_match'] = first_char_match
+                features[word]['last_char_match'] = last_char_match
+
+
+
+                num_chars = 0
+                for char in ocr_pred_lower:
+                    if char in word:
+                        num_chars += 1
+                    matches[word] = num_chars
+                features[word]['num_matches'] = matches[word] / (len(word) + 0.001) # for divide by zero error
+#                 except Exception as e:
+#                     print(str(e))
+#                     pass 
+#         from pprint import pprint
+#         pprint(features)
         return features
 
+    def get_weights(self):
+        weights = {
+            'first_char_match':     0.67,
+            'last_char_match':      0.34,
+            'num_matches':          0.21,
+            'exact_length_match':   0.43,
+            'bin_length_match':     0.23,
+            'levenshtein':          0.75,
+            'editdistance':         0.45,
+        }
+        return weights
+        
 
-    def final_scores(self, features):
+    def final_scores(self, features, ocr_pred, ocr_prob_threshold):
         final_scores = {}
 
         for word, feature_dict in features.items():
+#             if exact match in both LM and OCR model simply return word
             if feature_dict['exact'] or feature_dict['exact_stem'] or feature_dict['exact_lemma']:
 #                 print('Perfect Match', word)
                 return word
-            final_score = 1
+#             final_score = 1
             first_char_match = feature_dict['first_char_match']
             last_char_match = feature_dict['last_char_match']
-            score = feature_dict['score']
-            if first_char_match:
-                final_score += 10
-            if last_char_match:
-                final_score += 10
-            final_score *= score
-            final_scores[word] = final_score
+            lm_prob = feature_dict['lm_prob']
+            ocr_prob = feature_dict['ocr_prob']
+            # if OCR model is really confident return OCR model prediction
+            if ocr_prob >= ocr_prob_threshold:
+#                 print('ocr_prob_threshold')
+                return ocr_pred
+            
+#             if first_char_match:
+#                 final_score += 10
+#             if last_char_match:
+#                 final_score += 10
+#             final_score *= score
+
+#             final_scores[word] = final_score
+        weights = self.get_weights()
+    
+
+        for word, dic in features.items():
+            for feature in weights.keys():
+                features[word].update({feature: (features[word][feature] * weights[feature])})
+            final_scores[word] = sum(features[word].values())
+
+
         top_results = sorted(final_scores.items(), key=itemgetter(1), reverse=True)
         return top_results[0][0]
 
@@ -321,7 +371,7 @@ class Inference():
         pass
     
     
-    def predict(self, sentence, img_path=None, ind_preds=None):
+    def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.2):
         lm_preds = self.run_lm_inference_by_user_input(sentence)
         
 #         img = self.preprocess_image(img_path, self.img_width, self.img_height)
@@ -330,12 +380,12 @@ class Inference():
     
 #         features = self.create_features(lm_preds, ocr_pred, ocr_pred_prob)
         features = self.create_features_improved(lm_preds, ocr_pred, ocr_pred_prob)
-        print(lm_preds, ocr_pred, ocr_pred_prob)
-        final_pred = self.final_scores(features)
+#         print(lm_preds, ocr_pred, ocr_pred_prob)
+        final_pred = self.final_scores(features, ocr_pred[0], ocr_prob_threshold)
         # return top K? And use MAP @ K ??
         out = final_pred
         if ind_preds:
-            out = final_pred, lm_preds[1], ocr_pred # lm_pred 1 is alwas UNK? 
+            out = final_pred, lm_preds[1], ocr_pred # lm_pred 0 is alwas UNK? 
         return out
 
 
