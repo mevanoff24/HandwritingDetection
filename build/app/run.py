@@ -157,6 +157,7 @@ def predict():
 		right_text = request.form['right_text_form']
 		# file_url = photos.url(filename)
 		print(left_text, right_text, file_url)
+		print(type(left_text), type(right_text), type(file_url))        
 	# print(file_url)
 		X = left_text + ' [] ' + right_text
 		prediction = inference_model.predict(X, file_url)

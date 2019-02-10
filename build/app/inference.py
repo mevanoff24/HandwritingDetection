@@ -34,6 +34,7 @@ from collections import defaultdict
 from operator import itemgetter
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 import Levenshtein
+import re
 
 
 # tf.reset_default_graph()
@@ -144,8 +145,8 @@ class Inference():
             target_pos = tokens.index('[]')
             return tokens, target_pos
         
-    def run_lm_inference_by_user_input(self, sentence, topK=10):
-
+    def run_lm_inference_by_user_input(self, sentence, topK=100):
+        bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>']
         # evaluation mode 
         self.lm_model.eval()
         # norm_weight
@@ -160,7 +161,9 @@ class Inference():
         topv, topi = self.lm_model.run_inference(input_tokens, target=None, target_pos=target_pos, k=topK)
         output = []  
         for value, key in zip(topv, topi):
-            output.append((value.item(), self.itos[key.item()]))
+            word = self.itos[key.item()]
+            if word not in bad_list:
+                output.append((value.item(), word))
 #             print(value.item(), self.itos[key.item()])
         return output
 
@@ -330,7 +333,7 @@ class Inference():
         return weights
         
 
-    def final_scores(self, features, ocr_pred, ocr_prob_threshold):
+    def final_scores(self, features, ocr_pred, ocr_prob_threshold, return_topK=None):
         final_scores = {}
 
         for word, feature_dict in features.items():
@@ -365,27 +368,49 @@ class Inference():
 
 
         top_results = sorted(final_scores.items(), key=itemgetter(1), reverse=True)
+        if return_topK:
+            return top_results[:return_topK]
         return top_results[0][0]
 
     def weigh_function(self):
         pass
     
     
-    def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.2):
-        lm_preds = self.run_lm_inference_by_user_input(sentence)
+    def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.8):
         
-#         img = self.preprocess_image(img_path, self.img_width, self.img_height)
-#         ocr_pred = self.run_ocr_inference_by_user_image(img)
-        ocr_pred, ocr_pred_prob = self.run_beam_ocr_inference_by_user_image(img_path)
+        # if valid image filepath and contains text
+        valid_image = os.path.isfile(img_path)
+        valid_text = False
+#         if re.search('[a-zA-Z]', sentence) is not None:
+        if re.search('[a-zA-Z&.,:;!?\d]', sentence) is not None:
+            valid_text = True
+        print(valid_text, valid_image)
+        if valid_text:
+            lm_preds = self.run_lm_inference_by_user_input(sentence)
+        if valid_image:
+            ocr_pred, ocr_pred_prob = self.run_beam_ocr_inference_by_user_image(img_path)
     
 #         features = self.create_features(lm_preds, ocr_pred, ocr_pred_prob)
-        features = self.create_features_improved(lm_preds, ocr_pred, ocr_pred_prob)
-#         print(lm_preds, ocr_pred, ocr_pred_prob)
-        final_pred = self.final_scores(features, ocr_pred[0], ocr_prob_threshold)
-        # return top K? And use MAP @ K ??
-        out = final_pred
-        if ind_preds:
-            out = final_pred, lm_preds[1], ocr_pred # lm_pred 0 is alwas UNK? 
+        if valid_text and valid_image:
+            features = self.create_features_improved(lm_preds, ocr_pred, ocr_pred_prob)
+            print("LM", lm_preds)
+            print("OCR", ocr_pred)
+            print("OCR Prob", ocr_pred_prob)
+            final_pred = self.final_scores(features, ocr_pred[0], ocr_prob_threshold)
+            out = final_pred
+            if ind_preds:
+                print('both')
+                out = final_pred, lm_preds[0], ocr_pred 
+        # return top K? 
+        if not valid_image and not valid_text:
+            return 'NO INPUT. TRY AGAIN'
+        if not valid_image:
+            print('text only')
+            out = lm_preds[0]
+        if not valid_text:
+            print('image only')
+            out = ocr_pred
+        
         return out
 
 
