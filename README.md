@@ -1,18 +1,21 @@
-# Insight_Project_Framework
-Framework for machine learning projects at Insight Data Science.
+# Decipher
 
 
-## Things to Explore
-- How to handle punctuation? Remove? Replace? 
-- HAVE Named entity as well!!! 
+## Overview
 
-## Motivation for this project format:
-- **Insight_Project_Framework** : Put all source code for production within structured directory
-- **tests** : Put all source code for testing in an easy to find location
-- **configs** : Enable modification of all preset variables within single directory (consisting of one or many config files for separate tasks)
-- **data** : Include example a small amount of data in the Github repository so tests can be run to validate installation
-- **build** : Include scripts that automate building of a standalone environment
-- **static** : Any images or content to include in the README or web framework if part of the pipeline
+Developed Dockerized and AWS hosted Flask app to decipher messy handwriting to predict most likely word choice. 
+
+
+## Motivation for this project:
+Have you ever read handwritten text when you came across an indecipherable word? This is a big issue in pharmacies mis-prescribing medicine, maintenance workers mis-communicating results, or even reading lecture notes. The use cases are far and wide. 
+
+
+## Solution
+I have utilized an [Optical Character Recognition](https://en.wikipedia.org/wiki/Optical_character_recognition) and [context2vec](https://u.cs.biu.ac.il/~melamuo/publications/context2vec_conll16.pdf) models with a custom weighing algorithm results from each model to
+ Therefore I developed a Flask app to decipher messy handwriting to predict most likely text
+
+
+
 
 ## Setup
 Clone repository and update python path
