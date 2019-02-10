@@ -5,18 +5,24 @@ import sys
 import argparse
 import cv2
 import editdistance
-from DataLoader import DataLoader, Batch
+# from DataLoader import DataLoader, Batch
+from NewDataLoader import DataLoader, Batch # MY ADD
 from Model import Model, DecoderType
 from SamplePreprocessor import preprocess
+import pandas as pd
 
 
 class FilePaths:
 	"filenames and paths to data"
 	fnCharList = '../model/charList.txt'
 	fnAccuracy = '../model/accuracy.txt'
-	fnTrain = '../data/'
+# 	fnTrain = '../data/'
+	fnTrain = '../../../../../data/raw/word_level'
 	fnInfer = '../data/test.png'
 	fnCorpus = '../data/corpus.txt'
+
+word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
+word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
 
 
 def train(model, loader):
@@ -116,7 +122,9 @@ def main():
 	# train or validate on IAM dataset	
 	if args.train or args.validate:
 		# load training data, create TF model
-		loader = DataLoader(FilePaths.fnTrain, Model.batchSize, Model.imgSize, Model.maxTextLen)
+# 		loader = DataLoader(FilePaths.fnTrain, Model.batchSize, Model.imgSize, Model.maxTextLen)
+		loader = DataLoader(FilePaths.fnTrain, word_level_train, word_level_test, 
+                            Model.batchSize, Model.imgSize, Model.maxTextLen)
 
 		# save characters of model for inference mode
 		open(FilePaths.fnCharList, 'w').write(str().join(loader.charList))

@@ -142,6 +142,7 @@ class Model:
 # 		modelDir = '../model/'
 		modelDir = 'models/OCRBeamSearch/model/'        
 		latestSnapshot = tf.train.latest_checkpoint(modelDir) # is there a saved model?
+		print(latestSnapshot)
 
 		# if model must be restored (for inference), there must be a snapshot
 		if self.mustRestore and not latestSnapshot:
