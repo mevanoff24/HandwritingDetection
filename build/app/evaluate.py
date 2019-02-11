@@ -54,20 +54,24 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
                 img_path = np.random.choice(img_path_df.values.tolist())
                 # still getting 'unk'
     #                 y_pred = inference_model.predict(X, img_path)
-                y_pred, lm_pred, ocr_pred = inference_model.predict(X, img_path, ind_preds=ind_preds)
+                y_pred, lm_pred, ocr_pred, ocr_pred_prob = inference_model.predict(X, img_path, ind_preds=ind_preds, return_topK=50)
+#                 print(y_pred, lm_pred, ocr_pred)
     #             print('y_pred', y_pred)
-    #             print('lm_pred', lm_pred)
+#                 print('lm_pred', lm_pred)
     #             print('ocr_pred', ocr_pred)
                 if only_ocr:
                     y_pred = ocr_pred[0]
                 if only_lm:
     #                 print(lm_pred)
-                    y_pred = lm_pred[1]
+                    y_pred = lm_pred[0]
     #             print('Predicted: ', y_pred)
     #             print('-----------')
                 # exact match accuracy
                 if y_pred.lower() == y:
                     n_correct += 1
+                else:
+                    print('final pred: "{}" -- ocr pred: "{}" {} -- lm pred: "{}" {} -- true: "{}"'.format(
+                                y_pred.lower(), ocr_pred[0], round(ocr_pred_prob[0]*100,2), lm_pred[0][1], y in [w for _, w in lm_pred], y))
                 # stemmed accuracy 
                 if stemmer.stem(y_pred) == stemmer.stem(y):
                     n_correct_stem += 1
@@ -86,7 +90,8 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
                 bad_lines += 1
             if i % 100 == 0:
                 print('processed {} %'.format((i / len_test)*100.0))
-        except:
+        except Exception as e:
+            print(str(e))
             print('bad line')
 
     finish = time.time()
@@ -119,35 +124,13 @@ if __name__ == '__main__':
     # evaluate model 
     raw_correct, stem_correct, average_total_similarity = evaluate_model(X_test, y_test, 
                                                     word_level_df_test, subset=10000, 
-                                                ind_preds=True, only_ocr=False, only_lm=True)
+                                                ind_preds=True, only_ocr=False, only_lm=False)
     
     
     
     
-# Raw correct 0.9469523080846722
-# Stem correct 0.9484825299668452
-# Average Cosine Similarity 0.37941141817638285. Coverage: 0.0
-# Time to evaluate 10000 sample: 5053.0808365345
-# Number of bad lines 2158
 
-
-# Raw correct 0.25975516449885233
-# Stem correct 0.2626880897730171
-# Average Cosine Similarity 4.915273975695297. Coverage: 0.0
-# Time to evaluate 10000 sample: 5048.670153617859
-# Number of bad lines 2158
-
-
-# Raw correct 0.9074215761285387
-# Stem correct 0.9118847232848764
-# Average Cosine Similarity 0.5890220775711446. Coverage: 0.0
-# Time to evaluate 10000 sample: 5070.999721050262
-# Number of bad lines 2158
-
-
-
-### NEW
-
+# ONLY OCR
 # Raw correct 0.9086967610303494
 # Stem correct 0.9120122417750574
 # Average Cosine Similarity 0.6765553216851239. Coverage: 0.0
@@ -155,10 +138,19 @@ if __name__ == '__main__':
 # Number of bad lines 2158
 
 
+# ONLY LM
 # Raw correct 0.25975516449885233
 # Stem correct 0.2626880897730171
 # Average Cosine Similarity 4.91581974263811. Coverage: 0.0
 # Time to evaluate 10000 sample: 5024.891078233719
+# Number of bad lines 2158
+
+# Combined
+
+# Raw correct 0.9108645753634277
+# Stem correct 0.916475388931395
+# Average Cosine Similarity 0.6160382933089897. Coverage: 0.0
+# Time to evaluate 10000 sample: 5070.504088401794
 # Number of bad lines 2158
 
 

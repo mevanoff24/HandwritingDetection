@@ -92,7 +92,7 @@ class Inference():
 
     def build_beam_ocr_model(self, decoderType = 'wordbeamsearch'):
         # Beam Search OCR model
-        decoderType = DecoderType.BestPath
+        decoderType = 'wordbeamsearch'
         if 'beamsearch':
             decoderType = DecoderType.BeamSearch
         if 'wordbeamsearch':
@@ -322,13 +322,13 @@ class Inference():
 
     def get_weights(self):
         weights = {
-            'first_char_match':     0.67,
-            'last_char_match':      0.34,
-            'num_matches':          0.21,
+            'first_char_match':     0.63,
+            'last_char_match':      0.62,
+            'num_matches':          0.65,
             'exact_length_match':   0.43,
             'bin_length_match':     0.23,
-            'levenshtein':          0.75,
-            'editdistance':         0.45,
+            'levenshtein':          0.95,
+            'editdistance':         0.49,
         }
         return weights
         
@@ -376,7 +376,7 @@ class Inference():
         pass
     
     
-    def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.8):
+    def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.01, return_topK=None):
         
         # if valid image filepath and contains text
         valid_image = os.path.isfile(img_path)
@@ -384,7 +384,7 @@ class Inference():
 #         if re.search('[a-zA-Z]', sentence) is not None:
         if re.search('[a-zA-Z&.,:;!?\d]', sentence) is not None:
             valid_text = True
-        print(valid_text, valid_image)
+#         print(valid_text, valid_image)
         if valid_text:
             lm_preds = self.run_lm_inference_by_user_input(sentence)
         if valid_image:
@@ -393,35 +393,37 @@ class Inference():
 #         features = self.create_features(lm_preds, ocr_pred, ocr_pred_prob)
         if valid_text and valid_image:
             features = self.create_features_improved(lm_preds, ocr_pred, ocr_pred_prob)
-            print("LM", lm_preds)
-            print("OCR", ocr_pred)
-            print("OCR Prob", ocr_pred_prob)
+#             print("LM", lm_preds[0])
+#             print("OCR", ocr_pred)
+#             print("OCR Prob", ocr_pred_prob)
             final_pred = self.final_scores(features, ocr_pred[0], ocr_prob_threshold)
             out = final_pred
             if ind_preds:
-                print('both')
-                out = final_pred, lm_preds[0], ocr_pred 
+#                 print('both')
+                out = final_pred, lm_preds[0], ocr_pred, ocr_pred_prob 
+                if return_topK:
+                    out = final_pred, lm_preds[:return_topK], ocr_pred, ocr_pred_prob 
         # return top K? 
         if not valid_image and not valid_text:
             return 'NO INPUT. TRY AGAIN'
         if not valid_image:
-            print('text only')
+#             print('text only')
             out = lm_preds[0]
         if not valid_text:
-            print('image only')
+#             print('image only')
             out = ocr_pred
         
         return out
 
 
-if __name__ == '__main__':
-    left_text = 'the dog ran'
-    right_text = 'the house'
+# if __name__ == '__main__':
+#     left_text = 'the dog ran'
+#     right_text = 'the house'
 
-    sentence = left_text + ' [] ' + right_text
-    img_path = '../../data/samples/c03-096f-03-05.png'
+#     sentence = left_text + ' [] ' + right_text
+#     img_path = '../../data/samples/c03-096f-03-05.png'
 
 
-    inference = Inference()
+#     inference = Inference()
 
-    print(inference.predict(sentence, img_path))
+#     print(inference.predict(sentence, img_path))
