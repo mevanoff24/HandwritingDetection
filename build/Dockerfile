@@ -29,12 +29,28 @@ RUN cd /tmp/HandwritingDetection/build/app/models/ocr \
   && cd models \
   && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/ocr/weights-improvement2-10-01-3.00.hdf5 .
 
-RUN cd /tmp \
-  && cd HandwritingDetection/data \
+RUN cd /tmp/HandwritingDetection/data \
   && mkdir samples \
   && cd samples \
   && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/data/word_level/c03/c03-096f/c03-096f-03-05.png .
  
+# beam search install  
+RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/src \
+  && git clone https://github.com/githubharald/CTCWordBeamSearch.git \
+  && cd CTCWordBeamSearch/cpp/proj \
+  && ./beam_search.sh
+  
+  
+RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/src \
+  && cp CTCWordBeamSearch/cpp/proj/TFWordBeamSearch.so . \
+  && rm -rf CTCWordBeamSearch
+    
+# unzip model
+RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/model \
+  && unzip model.zip . \
+  && rm model.zip  
+  
+
 
 COPY . /app
 WORKDIR /app

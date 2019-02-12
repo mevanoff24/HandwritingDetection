@@ -2,7 +2,7 @@
 cd ~/HandwritingDetection/build/app/models/context2vec/
 mkdir models_103
 cd models_103/
-# aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/embedding.vec .
+aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/embedding.vec .
 aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/model.param .
 aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/model.param.config.json .
 aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/model.param.optim .
