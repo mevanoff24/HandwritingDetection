@@ -1,8 +1,8 @@
 #!/bin/bash
-cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/
 
-git clone https://github.com/githubharald/CTCWordBeamSearch.git
-cd CTCWordBeamSearch/cpp/proj/
+#git clone https://github.com/githubharald/CTCWordBeamSearch.git
+#cd CTCWordBeamSearch/cpp/proj/
 
 
 
@@ -67,14 +67,14 @@ fi
 
 # -----------------------------------------------------------------------------
 
-cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/CTCWordBeamSearch/tf
-python testCustomOp.py
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/CTCWordBeamSearch/tf
+#python testCustomOp.py
 
 # copy TFWordBeamSearch.so
-cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src
-cp CTCWordBeamSearch/cpp/proj/TFWordBeamSearch.so .
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src
+#cp CTCWordBeamSearch/cpp/proj/TFWordBeamSearch.so .
 
 # unzip model
-cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/model/
-unzip model.zip
-rm model.zip
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/model/
+#unzip model.zip
+#rm model.zip

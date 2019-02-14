@@ -6,7 +6,7 @@ RUN apt-get update \
   && ln -s /usr/bin/python3 python \
   && pip3 install --upgrade pip
 
-RUN pip3 install awscli aws
+RUN pip3 install awscli aws tensorflow==1.12.0
 
 RUN pip install --upgrade awscli==1.14.5 s3cmd==2.0.1 python-magic
 
@@ -19,25 +19,22 @@ RUN cd /tmp \
   && cd app/models/context2vec \
   && mkdir models_103 \
   && cd models_103 \
-  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/embedding.vec . \
-  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/model.param . \
-  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/model.param.config.json . \
-  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-103/model.param.optim .
+  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-2/embedding.vec . \
+  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-2/model.param . \
+  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-2/model.param.config.json . \
+  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/language_model/wiki-2/model.param.optim .
 
 RUN cd /tmp/HandwritingDetection/build/app/models/ocr \
   && mkdir models \
   && cd models \
   && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/ocr/weights-improvement2-10-01-3.00.hdf5 .
 
-RUN cd /tmp/HandwritingDetection/data \
-  && mkdir samples \
-  && cd samples \
-  && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/data/word_level/c03/c03-096f/c03-096f-03-05.png .
- 
+
 # beam search install  
 RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/src \
   && git clone https://github.com/githubharald/CTCWordBeamSearch.git \
   && cd CTCWordBeamSearch/cpp/proj \
+  && cp /tmp/HandwritingDetection/build/beam_search.sh . \
   && ./beam_search.sh
   
   
