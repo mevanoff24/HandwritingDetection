@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-  && apt-get install -y python3-pip python3-dev build-essential python-opencv git \
+  && apt-get install -y python3-pip python3-dev build-essential python-opencv git zip unzip \
   && cd /usr/local/bin \
   && ln -s /usr/bin/python3 python \
   && pip3 install --upgrade pip
@@ -29,8 +29,7 @@ RUN cd /tmp/HandwritingDetection/build/app/models/ocr \
   && cd models \
   && aws --no-sign-request s3 --region=us-west-2 cp s3://handwrittingdetection/models/ocr/weights-improvement2-10-01-3.00.hdf5 .
 
-
-# beam search install  
+ 
 RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/src \
   && git clone https://github.com/githubharald/CTCWordBeamSearch.git \
   && cd CTCWordBeamSearch/cpp/proj \
@@ -42,9 +41,8 @@ RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/src \
   && cp CTCWordBeamSearch/cpp/proj/TFWordBeamSearch.so . \
   && rm -rf CTCWordBeamSearch
     
-# unzip model
 RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/model \
-  && unzip model.zip . \
+  && unzip model.zip \
   && rm model.zip  
   
 

@@ -1,4 +1,13 @@
 #!/bin/bash
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/
+
+#git clone https://github.com/githubharald/CTCWordBeamSearch.git
+#cd CTCWordBeamSearch/cpp/proj/
+
+
+
+# -----------------------------------------------------------------------------
+
 # check if parallel decoding is enabled: specify PARALLEL NUMTHREADS, e.g. PARALLEL 8
 if [ "$1" == "PARALLEL" ]; then
 
@@ -55,3 +64,17 @@ else
 
 fi
 
+
+# -----------------------------------------------------------------------------
+
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src/CTCWordBeamSearch/tf
+#python testCustomOp.py
+
+# copy TFWordBeamSearch.so
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/src
+#cp CTCWordBeamSearch/cpp/proj/TFWordBeamSearch.so .
+
+# unzip model
+#cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/model/
+#unzip model.zip
+#rm model.zip
