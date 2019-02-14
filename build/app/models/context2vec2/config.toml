@@ -1,0 +1,12 @@
+[model]
+word_embed_size = 300
+hidden_size = 300
+n_layers = 1
+dropout = 0.1
+
+[train]
+n_epochs = 10
+batch_size = 128
+min_freq = 3
+ns_power = 0.75
+learning_rate = 1e-3
