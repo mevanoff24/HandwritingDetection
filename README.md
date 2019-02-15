@@ -13,6 +13,8 @@ Have you ever read handwritten text when you came across an indecipherable word?
 ## Solution
 I have utilized an [Optical Character Recognition](https://en.wikipedia.org/wiki/Optical_character_recognition) and [context2vec](https://u.cs.biu.ac.il/~melamuo/publications/context2vec_conll16.pdf) models with a custom weighing algorithm results from each model to decipher messy handwriting to predict most likely text. 
 
+## Build Environment
+
 ## Docker Setup
 If you have [docker](https://www.docker.com/) set up on your system follow these simple steps to deploy the app
 **Steps**
@@ -71,6 +73,8 @@ To install the package above, pleae run:
 ```shell
 pip install -r requiremnts
 ```
+
+
 
 
 ## Build Environment
