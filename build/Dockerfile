@@ -46,11 +46,10 @@ RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/model \
   && rm model.zip  
   
 
-
-COPY . /app
-WORKDIR /app
-# RUN pip3 install -r requirements.txt
-# RUN python -m nltk.downloader wordnet
+COPY . .
+WORKDIR /tmp/HandwritingDetection/build/app
+RUN pip3 install -r ../requirements.txt
+RUN python -m nltk.downloader wordnet
 ENTRYPOINT ["python3"]
-CMD ["app/run.py"]
+CMD ["run.py"]
 
