@@ -3,7 +3,7 @@
 
 ## Overview
 
-Developed Dockerized and AWS hosted Flask app to decipher messy handwriting to predict most likely word choice. 
+Dockerized and AWS hosted Flask app to decipher messy handwriting to predict most likely word choice. You can navigate to the url [here](bit.ly/decipherAI) to use the deployed application. 
 
 
 ## Motivation for this project:
@@ -11,59 +11,67 @@ Have you ever read handwritten text when you came across an indecipherable word?
 
 
 ## Solution
-I have utilized an [Optical Character Recognition](https://en.wikipedia.org/wiki/Optical_character_recognition) and [context2vec](https://u.cs.biu.ac.il/~melamuo/publications/context2vec_conll16.pdf) models with a custom weighing algorithm results from each model to
- Therefore I developed a Flask app to decipher messy handwriting to predict most likely text
+I have utilized an [Optical Character Recognition](https://en.wikipedia.org/wiki/Optical_character_recognition) and [context2vec](https://u.cs.biu.ac.il/~melamuo/publications/context2vec_conll16.pdf) models with a custom weighing algorithm results from each model to decipher messy handwriting to predict most likely text. 
+
+## Docker Setup
+If you have [docker](https://www.docker.com/) set up on your system follow these simple steps to deploy the app
+**Steps**
+1. clone this repo
+```
+https://github.com/mevanoff24/HandwritingDetection.git
+```
+2. In the root directory of `HandwritingDetection`, build the docker image using 
+```
+docker-compose build
+```
+3. Start the application by running
+```
+docker-compose up
+```
+4. Navigate to [http://127.0.0.1:5000](http://127.0.0.1:5000) to use the application. 
+
+
+## Non-Docker Setup
+1. clone this repo
+```
+https://github.com/mevanoff24/HandwritingDetection.git
+```
+2. In the root directory of `HandwritingDetection` first install all requirement packages 
+```
+pip install -r requiremnts
+```
+3. After `cd`ing into the `build` directory, optionally, download the data from [S3](https://aws.amazon.com/s3/) by running 
+```
+sh environment.sh
+```
+4. To compile beam search from tensorflow run the command
+```
+sh beam_search.sh
+```
 
 
 
-
-## Setup
-Clone repository and update python path
-```
-repo_name=Insight_Project_Framework # URL of your new repository
-username=mrubash1 # Username for your personal github account
-git clone https://github.com/$username/$repo_name
-cd $repo_name
-echo "export $repo_name=${PWD}" >> ~/.bash_profile
-echo "export PYTHONPATH=$repo_name/src:${PYTHONPATH}" >> ~/.bash_profile
-source ~/.bash_profile
-```
-Create new development branch and switch onto it
-```
-branch_name=dev-readme_requisites-20180905 # Name of development branch, of the form 'dev-feature_name-date_of_creation'}}
-git checkout -b $branch_name
-```
-
-## Initial Commit
-Lets start with a blank slate: remove `.git` and re initialize the repo
-```
-cd $repo_name
-rm -rf .git   
-git init   
-git status
-```  
-You'll see a list of file, these are files that git doesn't recognize. At this point, feel free to change the directory names to match your project. i.e. change the parent directory Insight_Project_Framework and the project directory Insight_Project_Framework:
-Now commit these:
-```
-git add .
-git commit -m "Initial commit"
-git push origin $branch_name
-```
-
-## Requisites
-
-- List all packages and software needed to build the environment
-- This could include cloud command line tools (i.e. gsutil), package managers (i.e. conda), etc.
 
 #### Dependencies
-
-- [Streamlit](streamlit.io)
-
+```
+Flask
+torch
+tensorflow
+numpy
+pandas
+nltk
+boto3
+opencv-python
+toml
+editdistance
+python-Levenshtein
+```
 #### Installation
 To install the package above, pleae run:
 ```shell
 pip install -r requiremnts
 ```
+
 
 ## Build Environment
 - Include instructions of how to launch scripts in the build subfolder
