@@ -38,17 +38,17 @@ docker-compose up
 ```
 https://github.com/mevanoff24/HandwritingDetection.git
 ```
-2. In the root directory of `HandwritingDetection` first install all requirement packages 
+2. Navigate to the `HandwritingDetection/build` with `cd cd HandwritingDetection/build/` and install all requirement packages 
 ```
 pip install -r requiremnts
 ```
-3. After `cd`ing into the `build` directory, optionally, download the data from [S3](https://aws.amazon.com/s3/) by running 
+3. Optionally, download the data from [S3](https://aws.amazon.com/s3/) by running 
 ```
 sh environment.sh
 ```
-4. To compile beam search from tensorflow run the command
+4. To compile beam search from tensorflow and unzip OCR models run the command
 ```
-sh beam_search.sh
+bash ./beam_search_local.sh
 ```
 
 
