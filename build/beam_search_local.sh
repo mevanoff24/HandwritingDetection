@@ -82,7 +82,6 @@ rm -rf CTCWordBeamSearch
 # unzip model
 cd ~/HandwritingDetection/build/app/models/OCRBeamSearch/model/
 unzip model.zip
-rm model.zip
 
 # download wordnet
 python -m nltk.downloader wordnet
