@@ -1,6 +1,6 @@
 [model]
 word_embed_size = 300
-hidden_size = 300
+hidden_size = 512
 n_layers = 1
 dropout = 0.1
 

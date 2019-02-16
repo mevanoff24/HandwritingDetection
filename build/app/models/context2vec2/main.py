@@ -77,9 +77,11 @@
 #                             word_embed_size=word_embed_size,
 #                             hidden_size=hidden_size,
 #                             n_layers=n_layers,
+#                             use_mlp = True,
 #                             bidirectional=True,
 #                             dropout=dropout,
-#                             pad_idx=dataset.pad_idx,
+# #                             pad_idx=dataset.pad_idx,
+#                             pad_index=dataset.pad_idx,
 #                             device=device,
 #                             inference=False).to(device)
         
@@ -303,7 +305,9 @@ def main():
                             hidden_size=hidden_size,
                             n_layers=n_layers,
                             bidirectional=True,
+#                             use_mlp = True,
                             dropout=dropout,
+#                             pad_index=dataset.pad_idx,
                             pad_idx=dataset.pad_idx,
                             device=device,
                             inference=False).to(device)

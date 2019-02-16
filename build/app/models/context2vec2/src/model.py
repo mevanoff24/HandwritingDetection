@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn.init import kaiming_normal
 from torch import tensor
 import numpy as np
+import math
 
 from src.negative_sampling import NegativeSampling
 from src.utils import init_embeddings
@@ -38,8 +39,8 @@ class Context2vec(nn.Module):
         for embed in [self.left2right_embed, self.right2left_embed]:
             init_embeddings(embed)
         # rnn
-        self.left2right_rnn = create_rnn_layer(word_embed_size, word_embed_size, n_layers, batch_first=True)
-        self.right2left_rnn = create_rnn_layer(word_embed_size, word_embed_size, n_layers, batch_first=True)
+        self.left2right_rnn = create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first=True)
+        self.right2left_rnn = create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first=True)
         # dropout
         self.dropout = nn.Dropout(dropout)
         # loss
