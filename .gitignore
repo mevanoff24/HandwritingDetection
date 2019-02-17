@@ -4,9 +4,10 @@ data/raw/*
 build/app/models/context2vec/models/*
 build/app/models/ocr/models/*
 build/app/models/embeddings/*
-build/app/models/context2vec/models_test/*
+build/app/models/context2vec/models/*
 build/app/models/context2vec/models_103/*
 build/app/models/OCRBeamSearch/model/snapshot*
 build/app/models/OCRBeamSearch/model_new/snapshow*
 build/app/models/OCRBeamSearch/model_orig/*
-build/app/models/context2vec2/models/*
+build/app/models/context2vec_orig/models/*
+build/app/models/context2vec_orig/models_103/*

@@ -1,17 +1,12 @@
-[nets]
+[model]
 word_embed_size = 300
 hidden_size = 512
 n_layers = 1
-use_mlp = true
-dropout = 0.1
+dropout = 0.2
 
 [train]
 n_epochs = 10
-batch_size = 128
+batch_size = 256
 min_freq = 3
 ns_power = 0.75
 learning_rate = 1e-3
-
-[mscc]
-question_file = 'YOUR_DATASET_DIR/Holmes.machine_format.questions.txt'
-answer_file = 'YOUR_DATASET_DIR/Holmes.machine_format.answers.txt'

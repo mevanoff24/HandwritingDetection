@@ -91,6 +91,6 @@ if __name__ == '__main__':
     word_level_meta_path_all = '../../data/preprocessed/word_level_meta.csv'
     word_level_meta_path_train = '../../data/preprocessed/word_level_train.csv'
     word_level_meta_path_test = '../../data/preprocessed/word_level_test.csv'
-    main_wiki(wikitext2_path, dataset='train', save=True)
-    main_wiki(wikitext2_path, dataset='test', save=True)
+    main_wiki(wikitext103_path, dataset='train', save=True)
+#     main_wiki(wikitext2_path, dataset='test', save=True)
     

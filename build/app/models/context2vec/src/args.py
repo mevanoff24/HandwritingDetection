@@ -4,7 +4,6 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(prog='src')
     parser.add_argument('--gpu', '-g', default=0, type=int)
-#     parser.add_argument('--train', '-t', action='store_true', help='train or not')
     parser.add_argument('--train-file', '-t', type=str, help='specify input file')
     parser.add_argument('--val-file', '-v', type=str, help='specify input file')
     parser.add_argument('--config-file', '-c', default='./config.toml', type=str, help='specify config toml file')

@@ -3,12 +3,30 @@ import os
 import time
 import torch
 from torch import optim
-from models.context2vec.src.eval.mscc import mscc_evaluation
-from models.context2vec.src.core.nets import Context2vec
-from models.context2vec.src.util.args import parse_args
-from models.context2vec.src.util.batch import Dataset
-from models.context2vec.src.util.config import Config
-from models.context2vec.src.util.io import write_embedding, write_config, read_config, load_vocab
+# from models.context2vec.src.eval.mscc import mscc_evaluation
+# from models.context2vec.src.core.nets import Context2vec
+# from models.context2vec.src.util.args import parse_args
+# from models.context2vec.src.util.batch import Dataset
+# from models.context2vec.src.util.config import Config
+# from models.context2vec.src.util.io import write_embedding, write_config, read_config, load_vocab
+
+# from src.mscc_eval import mscc_evaluation
+# from src.model import Context2vec
+# from src.negative_sampling import NegativeSampling
+# from src.utils import write_embedding, write_config 
+# from src.dataset import WikiDataset
+# import boto3
+# from io import BytesIO
+# from src.args import parse_args
+# from src.config import Config
+
+
+from models.context2vec.src.mscc_eval import mscc_evaluation
+from models.context2vec.src.model import Context2vec
+from models.context2vec.src.args import parse_args
+from models.context2vec.src.dataset import WikiDataset
+from models.context2vec.src.config import Config
+from models.context2vec.src.utils import write_embedding, write_config, read_config, load_vocab
 
 
 # OCR model imports 
@@ -76,9 +94,8 @@ class Inference():
                             hidden_size=config_dict['hidden_size'],
                             n_layers=config_dict['n_layers'],
                             bidirectional=config_dict['bidirectional'],
-                            use_mlp=config_dict['use_mlp'],
                             dropout=config_dict['dropout'],
-                            pad_index=config_dict['pad_index'],
+                            pad_idx=config_dict['pad_index'],
                             device=self.device,
                             inference=True).to(self.device)
         self.lm_model.load_state_dict(torch.load(modelfile, map_location=self.device))

@@ -3,8 +3,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from src.walker_alias import WalkerAlias
-from src.utils import init_embeddings
+# from src.walker_alias import WalkerAlias
+# from models.context2vec.src.walker_alias import WalkerAlias
+# from src.utils import init_embeddings
+# from models.context2vec.src.utils import init_embeddings
 
 
 # def init_embeddings(x):
