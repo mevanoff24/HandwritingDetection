@@ -1,5 +1,6 @@
 # Decipher
 
+![alt text](https://github.com/mevanoff24/HandwritingDetection/edit/master/data/samples/c03-096f-07-05.png)
 
 ## Overview
 
@@ -68,72 +69,65 @@ toml
 editdistance
 python-Levenshtein
 ```
-#### Installation
-To install the package above, pleae run:
-```shell
-pip install -r requiremnts
+
+
+
+## Build Models Locally
+
+### Context2vec
+1. Navigate to `HandwritingDetection/build/app/models/context2vec`
+2. The most basic way to start training is by running
+```
+python main.py -t TRAINING FILE
+```
+Where `-t` expects the training file. The `main` module expects your input to be a list of lists where each list is one example sentence, phrase or short paragraph. You may also pass in an optional validation set with the `-v`. Or you may pull data from a S3 bucket by using the `-s True` flag. 
+
+More optional flags available. See `--help`. 
+
+
+
+## Example
+
+Input:
+```
+In: X = 'We' + ' [] ' + 'in the house'
+In: Image.open(file_url)
+```
+OCR Model Prediction
+```
+In: ocr_pred, ocr_prob = inference_model.run_beam_ocr_inference_by_user_image(file_url)
+In: print('OCR prediction is "{}" with probability of {}%'.format(ocr_pred[0], round(ocr_prob[0]*100)))
+```
+```
+Out: OCR prediction is "like" with probability of 83.0%
+```
+Language Model Prediction
+```
+In: lm_preds = inference_model.run_lm_inference_by_user_input(X, topK=10)
+In: print('Top 10 LM predictions: {}'.format([w for _, w in lm_preds]))
+```
+```
+Out: Top 10 LM predictions: ['slept', 'dabble', "'re", 'stayed', 'sat', 'lived', 'hid', 'got', 'live']
+```
+Weighed Model
+```
+In: features = inference_model.create_features_improved(lm_preds, ocr_pred, ocr_prob)
+In: inference_model.final_scores(features, ocr_pred, ocr_prob_threshold=0.85, return_topK=10)
+```
+```
+Out: 
+[('live', 4.8623097696683555),
+ ('lived', 3.448472232239753),
+ ('dabble', 3.00382016921238),
+ ("'re", 2.888073804708552),
+ ('slept', 2.5013190095196265),
+ ('hid', 2.161875374647212),
+ ('stayed', 1.9861207593784505),
+ ('sat', 1.7082426527844938),
+ ('got', 1.6237610856401)]
 ```
 
 
-
-
-## Build Environment
-- Include instructions of how to launch scripts in the build subfolder
-- Build scripts can include shell scripts or python setup.py files
-- The purpose of these scripts is to build a standalone environment, for running the code in this repository
-- The environment can be for local use, or for use in a cloud environment
-- If using for a cloud environment, commands could include CLI tools from a cloud provider (i.e. gsutil from Google Cloud Platform)
-```
-# Example
-
-# Step 1
-# Step 2
-```
-
-## Configs
-- We recommond using either .yaml or .txt for your config files, not .json
-- **DO NOT STORE CREDENTIALS IN THE CONFIG DIRECTORY!!**
-- If credentials are needed, use environment variables or HashiCorp's [Vault](https://www.vaultproject.io/)
-
-
-## Test
-- Include instructions for how to run all tests after the software is installed
-```
-# Example
-
-# Step 1
-# Step 2
-```
-
-## Run Inference
-- Include instructions on how to run inference
-- i.e. image classification on a single image for a CNN deep learning project
-```
-# Example
-
-# Step 1
-# Step 2
-```
-
-## Build Model
-- Include instructions of how to build the model
-- This can be done either locally or on the cloud
-```
-# Example
-
-# Step 1
-# Step 2
-```
-
-## Serve Model
-- Include instructions of how to set up a REST or RPC endpoint
-- This is for running remote inference via a custom model
-```
-# Example
-
-# Step 1
-# Step 2
-```
 
 ## Analysis
 - Include some form of EDA (exploratory data analysis)
