@@ -1,5 +1,6 @@
 # Decipher
 
+![alt text](https://github.com/mevanoff24/HandwritingDetection/edit/master/data/samples/c03-096f-07-05.png)
 
 ## Overview
 
