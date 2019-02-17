@@ -88,6 +88,11 @@ Where `-t` expects the training file. The `main` module expects your input to be
 More optional flags available. See `--help`. 
 
 
+### Optical Character Recognition Model 
+
+
+TODO
+
 ------
 
 ## Example
@@ -152,3 +157,9 @@ As you can see above, the initial OCR model predicted this image incorrectly. Pr
 | Weighted LM + OCR Beam Search  | Wiki-103  | 0.911  | 0.916  | 0.616  |
 
 
+-----
+
+
+### Acknowledgements
+
+Big thank you to Harald Scheidl (githubharald) and his [SimpleHTR](https://github.com/githubharald/SimpleHTR) implementation of his Handwritten Text Recognition (HTR) system and [CTC Word Beam Search Decoding Algorithm](https://github.com/githubharald/CTCWordBeamSearch). His Beam Search implementation saved me a lot of time in this short 3-4 week project. 
