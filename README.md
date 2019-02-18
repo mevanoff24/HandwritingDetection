@@ -97,6 +97,9 @@ TODO
 
 ## Example
 
+![image](https://user-images.githubusercontent.com/8717434/52923844-97a7dd00-32de-11e9-9115-fe3ddb6634eb.png)
+
+
 Input:
 ```
 In: file_url = 'data/samples/c03-096f-07-05'
