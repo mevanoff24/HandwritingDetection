@@ -11,7 +11,10 @@ from Model import Model, DecoderType
 from SamplePreprocessor import preprocess
 import pandas as pd
 
+import boto3
+import os
 
+ 
 class FilePaths:
 	"filenames and paths to data"
 	fnCharList = '../model/charList.txt'
@@ -21,8 +24,8 @@ class FilePaths:
 	fnInfer = '../data/test.png'
 	fnCorpus = '../data/corpus.txt'
 
-word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
-word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
+# word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
+# word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
 
 
 def train(model, loader):
@@ -109,9 +112,27 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--train", help="train the NN", action="store_true")
 	parser.add_argument("--validate", help="validate the NN", action="store_true")
+	parser.add_argument("--uses3", help="use S3", action="store_true")    
 	parser.add_argument("--beamsearch", help="use beam search instead of best path decoding", action="store_true")
 	parser.add_argument("--wordbeamsearch", help="use word beam search instead of best path decoding", action="store_true")
 	args = parser.parse_args()
+    
+	if args.uses3:
+		data_path = '../../data/raw/word_level/'        
+		S3_WORD_LEVEL_TRAIN_PATH = 'data/word_level_train.csv'
+		S3_WORD_LEVEL_TEST_PATH = 'data/word_level_test.csv'
+		S3_BUCKET = 'handwrittingdetection'
+		client = boto3.resource('s3')
+		bucket = client.Bucket(S3_BUCKET)
+		word_level_train = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TRAIN_PATH))
+		word_level_test = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TEST_PATH))
+		word_level_train['image_path'] = word_level_train['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
+		word_level_test['image_path'] = word_level_test['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
+
+	else:
+		word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
+		word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
+# 		print(word_level_train.head())
 
 	decoderType = DecoderType.BestPath
 	if args.beamsearch:
@@ -148,5 +169,6 @@ def main():
 
 
 if __name__ == '__main__':
+
 	main()
 
