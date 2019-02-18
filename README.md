@@ -131,6 +131,14 @@ editdistance
 python-Levenshtein
 ```
 
+## Data
+
+[IAM Handwriting Database](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database)
+- The IAM Handwriting database is the biggest database of English handwriting images. It has 1539 pages of scanned text written by 600+ writers.
+
+[WikiText2 and WikiText103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/)
+- The WikiText language modeling dataset is a collection of over 100 million tokens extracted from the set of verified Good and Featured articles on Wikipedia.
+
 
 -----
 
@@ -142,30 +150,26 @@ python-Levenshtein
 ```
 python main.py -t TRAINING FILE
 ```
-Where `-t` expects the training file. The `main` module expects your input to be a list of lists where each list is one example sentence, phrase or short paragraph. You may also pass in an optional validation set with the `-v`. Or you may pull data from a S3 bucket by using the `-s True` flag. 
-
+Where `-t` expects the training file. The `main` module expects your input to be a list of lists where each list is one example sentence, phrase or short paragraph. You may also pass in an optional validation set with the `-v`. Or you may pull data from a S3 bucket by using the `-s true` flag. The easiest way to run the model is to pull data from the S3 bucket with the command
+```
+python main.py -s true
+```
 More optional flags available. See `--help`. 
 
 
 ### Optical Character Recognition Model 
 
-I use the IAM dataset. Follow these instructions to get the dataset:
+I use the IAM dataset. To get the dataset:
 
 1. Register for free at this [website](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database).
 2. Download `words/words.tgz`.
-3. Download `ascii/words.txt`.
-4. Put `words.txt` into the `data/` directory.
-Create the directory `data/raw/word_level/`.
-Put the content (directories a01, a02, ...) of `words.tgz` into `data/raw/word_level/`.
+3. Create the directory `data/raw/word_level/`.
+4. Put the content (directories a01, a02, ...) of `words.tgz` into `data/raw/word_level/`.
 
 To train the model, navigate to the directory `HandwritingDetection/build/app/models/OCRBeamSearch/src` and run 
 ```
 python main.py --train --uses3
 ```
-
-------
-
-
 
 -----
 
