@@ -9,5 +9,6 @@ build/app/models/context2vec/models_103/*
 build/app/models/OCRBeamSearch/model/snapshot*
 build/app/models/OCRBeamSearch/model_new/snapshow*
 build/app/models/OCRBeamSearch/model_orig/*
+build/app/models/context2vec_orig/*
 build/app/models/context2vec_orig/models/*
 build/app/models/context2vec_orig/models_103/*

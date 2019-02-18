@@ -41,20 +41,20 @@ class Context2vec(nn.Module):
         self.rnn_output_size = hidden_size
         
         # embedding
-        self.left2right_embed = create_embedding_layer(vocab_size, word_embed_size, pad_idx)
-        self.right2left_embed = create_embedding_layer(vocab_size, word_embed_size, pad_idx)
-        for embed in [self.left2right_embed, self.right2left_embed]:
+        self.l2r_emb = create_embedding_layer(vocab_size, word_embed_size, pad_idx)
+        self.r2l_emb = create_embedding_layer(vocab_size, word_embed_size, pad_idx)
+        for embed in [self.l2r_emb, self.r2l_emb]:
             init_embeddings(embed)
         # rnn
-        self.left2right_rnn = create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first=True)
-        self.right2left_rnn = create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first=True)
+        self.l2r_rnn = create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first=True)
+        self.r2l_rnn = create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first=True)
         # dropout
         self.dropout = nn.Dropout(dropout)
         # loss
-        self.neg_sample_loss = NegativeSampling(hidden_size, counter, pad_idx=pad_idx, num_neg=10, power=0.75,
+        self.criterion = NegativeSampling(hidden_size, counter, pad_idx=pad_idx, num_neg=10, power=0.75,
                                           device=device) # num_neg=10, power=0.75 used in paper
         
-        self.top_model = NeuralNet(input_size=hidden_size*2, mid_size=hidden_size*2, output_size=hidden_size,
+        self.MLP = NeuralNet(input_size=hidden_size*2, mid_size=hidden_size*2, output_size=hidden_size,
                                                                dropout=dropout)
         
     def forward(self, X, y, target_pos=None):
@@ -62,11 +62,11 @@ class Context2vec(nn.Module):
         X_reversed = X.flip(1)[:, :-1]
         X = X[:, :-1]
         
-        left2right_embed = self.left2right_embed(X)
-        right2left_embed = self.right2left_embed(X_reversed)
+        left2right_embed = self.l2r_emb(X)
+        right2left_embed = self.r2l_emb(X_reversed)
         
-        left2right_out, _ = self.left2right_rnn(left2right_embed)
-        right2left_out, _ = self.right2left_rnn(right2left_embed)
+        left2right_out, _ = self.l2r_rnn(left2right_embed)
+        right2left_out, _ = self.r2l_rnn(right2left_embed)
         
         left2right_out = left2right_out[:, :-1, :]
         right2left_out = right2left_out[:, :-1, :].flip(1)
@@ -74,27 +74,32 @@ class Context2vec(nn.Module):
         if self.inference:
             left2right_out = left2right_out[0, target_pos]
             right2left_out = right2left_out[0, target_pos]
-            out = self.top_model(torch.cat((left2right_out, right2left_out), dim=0))
+            out = self.MLP(torch.cat((left2right_out, right2left_out), dim=0))
             return out
         # TRAINING 
         else:
-            out = self.top_model(torch.cat((left2right_out, right2left_out), dim=2)) # dim = 2
-            loss = self.neg_sample_loss(y, out)
+            out = self.MLP(torch.cat((left2right_out, right2left_out), dim=2)) # dim = 2
+            loss = self.criterion(y, out)
             return loss 
         
     def run_inference(self, input_tokens, target, target_pos, k=10):
-        context_vector = self.forward(input_tokens, target=None, target_pos=target_pos)
+        context_vector = self.forward(input_tokens, y=None, target_pos=target_pos)
         if target is None:
-            topv, topi = ((self.neg_sample_loss.W.weight*context_vector).sum(dim=1)).data.topk(k)
+            topv, topi = ((self.criterion.W.weight*context_vector).sum(dim=1)).data.topk(k)
             return topv, topi
         else:
             context_vector /= torch.norm(context_vector, p=2)
-            target_vector = self.neg_sample_loss.W.weight[target]
+            target_vector = self.criterion.W.weight[target]
             target_vector /= torch.norm(target_vector, p=2)
             similarity = (target_vector * context_vector).sum()
             return similarity.item()
         
+    def norm_embedding_weight(self, embeddings):
+        embeddings.weight.data /= torch.norm(embeddings.weight.data, p=2, dim=1, keepdim=True)
+        embeddings.weight.data[embeddings.weight.data != embeddings.weight.data] = 0
+
         
+    
         
 class NeuralNet(nn.Module):
 

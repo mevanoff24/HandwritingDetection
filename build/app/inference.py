@@ -81,6 +81,7 @@ class Inference():
         self.lemma = WordNetLemmatizer()
         
     def build_language_model(self, model_dir='models/context2vec/models_103'):
+#     def build_language_model(self, model_dir='models/context2vec/models'):    
         # LANGUAGE MODEL
         modelfile = os.path.join(model_dir, 'model.param')
         wordsfile = os.path.join(model_dir, 'embedding.vec')
@@ -168,6 +169,7 @@ class Inference():
         self.lm_model.eval()
         # norm_weight
         self.lm_model.norm_embedding_weight(self.lm_model.criterion.W)
+#         self.lm_model.norm_embedding_weight(self.lm_model.neg_sample_loss.W)
 
         tokens, target_pos = self._return_split_sentence(sentence)
         tokens[target_pos] = self.unk_token

@@ -45,7 +45,7 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
     start = time.time()
     for i, (X, y) in enumerate(zip(X_test[:subset], y_true)):
         try:
-#         print(X)
+    #         print(X)
             X = re.sub(r'<<([^;]*)>>', '[]', ' '.join(X))
         #     print(y)
             img_path_df = word_level_df_test.loc[word_level_df_test.token == y, 'image_path']
@@ -55,9 +55,9 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
                 # still getting 'unk'
     #                 y_pred = inference_model.predict(X, img_path)
                 y_pred, lm_pred, ocr_pred, ocr_pred_prob = inference_model.predict(X, img_path, ind_preds=ind_preds, return_topK=50)
-#                 print(y_pred, lm_pred, ocr_pred)
+    #                 print(y_pred, lm_pred, ocr_pred)
     #             print('y_pred', y_pred)
-#                 print('lm_pred', lm_pred)
+    #                 print('lm_pred', lm_pred)
     #             print('ocr_pred', ocr_pred)
                 if only_ocr:
                     y_pred = ocr_pred[0]
@@ -67,6 +67,10 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
     #             print('Predicted: ', y_pred)
     #             print('-----------')
                 # exact match accuracy
+    #             print(y_pred)
+                if isinstance(y_pred, tuple):
+                    y_pred = y_pred[1]
+    #             print(y_pred)
                 if y_pred.lower() == y:
                     n_correct += 1
                 else:

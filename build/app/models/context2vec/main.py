@@ -64,16 +64,21 @@ def main(train=True):
         print(model)
         
         if args.val_file:
-            if args.use_s3 == 'true':
-                print('Loading Validation Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_VAL_PATH))
-                val_sentences = np.load(BytesIO(bucket.Object(S3_WIKI_VAL_PATH).get()['Body'].read()))
-            else:
-                val_sentences = np.load(args.val_file)
+            val_sentences = np.load(args.val_file)
+#             val_dataset = WikiDataset(val_sentences, config.batch_size, config.min_freq, device)
+#             val_counter = np.array([val_dataset.vocab.freqs[word] if word in val_dataset.vocab.freqs else 0
+#                                 for word in val_dataset.vocab.itos])
+                
+        if args.use_s3 == 'true':
+            print('Loading Validation Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_VAL_PATH))
+            val_sentences = np.load(BytesIO(bucket.Object(S3_WIKI_VAL_PATH).get()['Body'].read()))
             
-            print('Creating Validation dataset')
+        if args.use_s3 == 'true' or args.val_file:
             val_dataset = WikiDataset(val_sentences, config.batch_size, config.min_freq, device)
             val_counter = np.array([val_dataset.vocab.freqs[word] if word in val_dataset.vocab.freqs else 0
                                 for word in val_dataset.vocab.itos])
+            print('Creating Validation dataset')
+            
             
         log_dir_name = 'logs'    
         log_dir = os.path.dirname(log_dir_name)
@@ -126,23 +131,24 @@ def main(train=True):
             
             # ---------
             # VAL PHASE
-            model.eval()
-            for val_iterator in val_dataset.get_batch_iter(config.batch_size):
-                with torch.no_grad():
-                    for batch in val_iterator:
-                        val_sentence = getattr(batch, 'sentence')
-                        val_target = val_sentence[:, 1:-1]
-                        if val_target.size(0) == 0:
-                            continue
-                        val_loss = model(val_sentence, val_target)
-                        val_total_loss += val_loss.data.mean()
-            print('Train loss: {} -- Valid loss: {}'.format(total_loss.item(), val_total_loss.item()))
-            print()
-            
+            if args.use_s3 == 'true' or args.val_file:
+                model.eval()
+                for val_iterator in val_dataset.get_batch_iter(config.batch_size):
+                    with torch.no_grad():
+                        for batch in val_iterator:
+                            val_sentence = getattr(batch, 'sentence')
+                            val_target = val_sentence[:, 1:-1]
+                            if val_target.size(0) == 0:
+                                continue
+                            val_loss = model(val_sentence, val_target)
+                            val_total_loss += val_loss.data.mean()
+                print('Train loss: {} -- Valid loss: {}'.format(total_loss.item(), val_total_loss.item()))
+                print()
+
     
         # ---------
             with open(os.path.join(log_dir_name, args.log_filename), 'a') as f:
-                if args.val_file:
+                if args.val_file or args.use_s3 == 'true':
                     val_out = val_total_loss.item()
                 else:
                     val_out = ''  
