@@ -149,8 +149,19 @@ More optional flags available. See `--help`.
 
 ### Optical Character Recognition Model 
 
+I use the IAM dataset. Follow these instructions to get the dataset:
 
-TODO
+1. Register for free at this [website](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database).
+2. Download `words/words.tgz`.
+3. Download `ascii/words.txt`.
+4. Put `words.txt` into the `data/` directory.
+Create the directory `data/raw/word_level/`.
+Put the content (directories a01, a02, ...) of `words.tgz` into `data/raw/word_level/`.
+
+To train the model, navigate to the directory `HandwritingDetection/build/app/models/OCRBeamSearch/src` and run 
+```
+python main.py --train --uses3
+```
 
 ------
 
