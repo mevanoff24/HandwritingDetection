@@ -42,8 +42,8 @@ RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/src \
   && rm -rf CTCWordBeamSearch
     
 RUN cd /tmp/HandwritingDetection/build/app/models/OCRBeamSearch/model \
-  && unzip model.zip \
-  && rm model.zip  
+  && rm checkpoint \
+  && unzip model.zip  
   
 
 COPY . .
