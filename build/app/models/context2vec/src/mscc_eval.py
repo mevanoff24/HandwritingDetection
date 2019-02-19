@@ -7,7 +7,6 @@ Used to convert the Microsoft Sentence Completion Challnege (MSCC) learning corp
 '''
 
 import glob
-# import numpy
 import numpy as np
 import torch
 import sys
@@ -96,8 +95,6 @@ def mscc_evaluation(question_file,
                     device):
         
         questions = read_mscc_questions(question_file)
-        print('HERE --------------------')
-        print(questions)
         q_id_and_sim = []
         with open(question_file, mode='r') as f, open(output_file, mode='w') as w:
             for question, input_line in zip(questions, f):

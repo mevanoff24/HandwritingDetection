@@ -1,8 +1,10 @@
+'''
+The class WalkerAlias is taken from the original author of Context2vec
+https://github.com/chainer/chainer/blob/v5.2.0/chainer/utils/walker_alias.py
+'''
 
 import numpy
 import numpy as np
-# Taken from here 
-# https://github.com/chainer/chainer/blob/v5.2.0/chainer/utils/walker_alias.py#L6
 
 class WalkerAlias(object):
     """Implementation of Walker's alias method.
@@ -98,47 +100,3 @@ class WalkerAlias(object):
             'walker_alias_sample'
         )(ps, self.threshold, self.values, len(self.threshold))
         return vs
-    
-  
-# import numpy
-    
-# class WalkerAlias(object):
-#     '''
-#     This is from Chainer's implementation.
-#     You can find the original code at
-#     https://github.com/chainer/chainer/blob/v4.4.0/chainer/utils/walker_alias.py
-#     This class is
-#         Copyright (c) 2015 Preferred Infrastructure, Inc.
-#         Copyright (c) 2015 Preferred Networks, Inc.
-#     '''
-#     def __init__(self, probs):
-#         prob = numpy.array(probs, numpy.float32)
-#         prob /= numpy.sum(prob)
-#         threshold = numpy.ndarray(len(probs), numpy.float32)
-#         values = numpy.ndarray(len(probs) * 2, numpy.int32)
-#         il, ir = 0, 0
-#         pairs = list(zip(prob, range(len(probs))))
-#         pairs.sort()
-#         for prob, i in pairs:
-#             p = prob * len(probs)
-#             while p > 1 and ir < il:
-#                 values[ir * 2 + 1] = i
-#                 p -= 1.0 - threshold[ir]
-#                 ir += 1
-#             threshold[il] = p
-#             values[il * 2] = i
-#             il += 1
-#         # fill the rest
-#         for i in range(ir, len(probs)):
-#             values[i * 2 + 1] = 0
-
-#         assert((values < len(threshold)).all())
-#         self.threshold = threshold
-#         self.values = values
-
-#     def sample(self, shape):
-#         ps = numpy.random.uniform(0, 1, shape)
-#         pb = ps * len(self.threshold)
-#         index = pb.astype(numpy.int32)
-#         left_right = (self.threshold[index] < pb - index).astype(numpy.int32)
-#         return self.values[index * 2 + left_right]

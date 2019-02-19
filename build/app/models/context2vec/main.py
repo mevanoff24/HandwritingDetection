@@ -20,7 +20,6 @@ def main(train=True):
     args = parse_args()
     config = Config(args.config_file)
     gpu_id = args.gpu
-#     use_cuda = torch.cuda.is_available()
     use_cuda = torch.cuda.is_available() and gpu_id > -1
     max_sent_length = 64
     if use_cuda:
@@ -51,9 +50,7 @@ def main(train=True):
                             hidden_size=config.hidden_size,
                             n_layers=config.n_layers,
                             bidirectional=True,
-#                             use_mlp = True,
                             dropout=config.dropout,
-#                             pad_index=dataset.pad_idx,
                             pad_idx=dataset.pad_idx,
                             device=device,
                             inference=False).to(device)
@@ -65,9 +62,6 @@ def main(train=True):
         
         if args.val_file:
             val_sentences = np.load(args.val_file)
-#             val_dataset = WikiDataset(val_sentences, config.batch_size, config.min_freq, device)
-#             val_counter = np.array([val_dataset.vocab.freqs[word] if word in val_dataset.vocab.freqs else 0
-#                                 for word in val_dataset.vocab.itos])
                 
         if args.use_s3 == 'true':
             print('Loading Validation Data from S3 bucket {} -- {}'.format(S3_BUCKET, S3_WIKI_VAL_PATH))
@@ -145,7 +139,6 @@ def main(train=True):
                 print('Train loss: {} -- Valid loss: {}'.format(total_loss.item(), val_total_loss.item()))
                 print()
 
-    
         # ---------
             with open(os.path.join(log_dir_name, args.log_filename), 'a') as f:
                 if args.val_file or args.use_s3 == 'true':

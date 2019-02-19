@@ -1,3 +1,7 @@
+"""
+This is for the N-Gram Model -- Not currently being used
+"""
+
 import numpy as np
 import pandas as pd
 import dill as pickle
@@ -14,19 +18,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
-# from .utils import unpickle
-# TODO Move to utils 
 def unpickle(filename):
     """ Unpickle file """
     with open(filename, 'rb') as f:
         return pickle.load(f)
 
 
-# DATA_DIR = '../../../data'
 
 DATA_DIR = '../../data'
-# TODO move this 
 data_path = os.path.join(DATA_DIR, 'raw/word_level')
 meta_json_data_path = os.path.join(DATA_DIR, 'preprocessed/meta.json')
 word_level_meta_path = os.path.join(DATA_DIR, 'preprocessed/word_level_meta.csv')
@@ -46,36 +45,20 @@ import dill as pickle
 
 def s3_init(bucketname='handwrittingdetection'):
 
-    
     session = boto3.Session(
         aws_access_key_id=pub_key,
         aws_secret_access_key=secret_key,
-    )
-    
+    )  
     client = session.resource('s3')
     bucket = client.Bucket(bucketname)
     return client, bucket
 
-# client, bucket = s3_init(bucketname='handwrittingdetection')
     
 def unpickle_s3(filename, client=None, bucket=None):
     with BytesIO() as data:
         bucket.download_fileobj(filename, data)
         data.seek(0)
         return pickle.load(data)
-
-# bigram_model_path = 'data/ngram_models/bigram_likelihood_model.pkl'
-# trigram_model_path = 'data/ngram_models/trigram_likelihood_model.pkl'
-
-# word_path_mapping_path = 'data/word_path_mapping.pkl'
-# letters_path = 'data/letters_map.pkl'
-
-# bigram_model = unpickle_s3(bigram_model_path, client, bucket)
-# trigram_model = unpickle_s3(trigram_model_path, client, bucket)
-
-# word_path_mapping = unpickle_s3(word_path_mapping_path, client, bucket)
-# letters = unpickle_s3(letters_path, client, bucket)
-
 
 
 def tokenize_and_join(context):
@@ -144,9 +127,6 @@ def teseract_baseline(file_url, word_path_mapping, letters, tmpdir='tmp/'):
     text = pytesseract.image_to_string(Image.open(save_img_path),
                 config='-c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyz -psm 13', lang='eng')
     
-    # os.remove(save_img_path)
-    # os.rmdir(tmpdir)
-    # shutil.rmtree(tmpdir)
     return text, len(text) 
 
 
@@ -181,16 +161,6 @@ def absoluteFilePaths(directory):
         for f in filenames:
             yield os.path.join(dirpath, f)
 
-# def create_image_path(df, data_path, use_s3=False):
-#     """Create dictionary for mapping of word to data path"""
-#     if use_s3:
-#         [f.key for f in files[:5] if '.png' in f.key]
-#     all_paths = [i for i in absoluteFilePaths(data_path)]
-#     all_path_endings = [i.split('/')[-1].split('.')[0] for i in all_paths]
-#     all_path_dict = defaultdict(lambda: 0, dict(zip(all_path_endings, all_paths)))
-#     df['image_path'] = df['image_name'].map(lambda x: all_path_dict[x])
-#     return df
-
 
 def create_image_path(df, data_path, use_s3=False, s3_image_path='data/word_level'):
     """Create dictionary for mapping of word to data path"""
@@ -210,7 +180,6 @@ def create_image_path(df, data_path, use_s3=False, s3_image_path='data/word_leve
 def get_prediction(left_text, right_text, file_url, use_s3=False):
 
     if use_s3:
-
         client, bucket = s3_init(bucketname='handwrittingdetection')
 
         bigram_model_path = 'data/ngram_models/bigram_likelihood_model.pkl'
@@ -223,7 +192,6 @@ def get_prediction(left_text, right_text, file_url, use_s3=False):
         trigram_model = unpickle_s3(trigram_model_path, client, bucket)
 
         word_path_mapping = unpickle_s3(word_path_mapping_path, client, bucket)
-        print(word_path_mapping)
         letters = unpickle_s3(letters_path, client, bucket)
 
 
@@ -245,10 +213,6 @@ def get_prediction(left_text, right_text, file_url, use_s3=False):
         word_level_df = pd.read_csv(word_level_meta_path)
         word_level_df = create_image_path(word_level_df, data_path)
 
-        # word_path_mapping = defaultdict(lambda: 0, dict(zip(word_level_df.token, word_level_df.image_path)))                              
-        # with open(os.path.join(DATA_DIR, 'processed', 'word_path_mapping.pkl'), 'wb') as f:
-        #     pickle.dump(word_path_mapping, f)
-
         word_path_mapping = unpickle(word_path_mapping_path)
         letter2idx = unpickle(letters_path)
 
@@ -266,6 +230,5 @@ def get_prediction(left_text, right_text, file_url, use_s3=False):
 
 
 # if __name__ == '__main__':
-#     # TODO Update for user input!!!!!
 #     sample_index = 102
 #     main(sample_index)

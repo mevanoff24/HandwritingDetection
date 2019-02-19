@@ -5,9 +5,6 @@ from torch import tensor
 import numpy as np
 import math
 
-# from src.negative_sampling import NegativeSampling
-# from src.utils import init_embeddings
-
 # from models.context2vec.src.negative_sampling import NegativeSampling
 # from models.context2vec.src.utils import init_embeddings
 
@@ -148,7 +145,6 @@ class NegativeSampling(nn.Module):
         init_embeddings(self.W)
         # self.W.weight.data.zero_()
         self.log_loss = nn.LogSigmoid()
-#         self.sum_log_sampled = t.bmm(noise, input.unsqueeze(2)).sigmoid().log().sum(1).squeeze()
         self.sampler = WalkerAlias(np.power(counter, power))
         
     def negative_sampling(self, shape):
@@ -267,30 +263,3 @@ class WalkerAlias(object):
         )(ps, self.threshold, self.values, len(self.threshold))
         return vs
     
-  
-
-
-# class NeuralNet(nn.Module):
-#     def __init__(self, out_sz, sizes, drops, y_range=None, use_bn=False, f=F.relu)
-#     def __init__(self, input_size, mid_size, output_size, dropout):
-#         super().__init__()
-        
-#         self.linear = nn.ModuleList([nn.Linear(sizes[i], sizes[i+1]) for i in range(len(sizes)-1)])
-#         self.bns = nn.ModuleList([nn.BatchNorm1d(size) for size in sizes[1:]])
-#         for layer in self.linear:
-#             kaiming_normal(layer.weight.data)
-#         self.dropout = [nn.Dropout(drop) for drop in drops]
-#         self.output = nn.Linear(sizes[-1], 1)
-#         kaiming_normal(self.output.weight.data)
-#         self.f = f
-#         self.use_bn = use_bn
-            
-        
-#     def forward(self, X):
-#         for linear, drop, norm in zip(self.linear, self.dropout, self.bns):
-#             X = self.f(linear(X))
-#             if self.use_bn: 
-#                 X = norm(X)
-#             X = drop(X)
-#         X = self.output(X)
-
