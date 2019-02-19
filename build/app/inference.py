@@ -398,7 +398,8 @@ class Inference():
     def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.01, return_topK=None):
         
         # if valid image filepath and contains text
-        valid_image = os.path.isfile(img_path)
+        
+        valid_image = os.path.isfile(str(img_path))
         valid_text = False
 #         if re.search('[a-zA-Z]', sentence) is not None:
         if re.search('[a-zA-Z&.,:;!?\d]', sentence) is not None:
