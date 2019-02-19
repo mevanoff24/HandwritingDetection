@@ -3,17 +3,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-# from src.walker_alias import WalkerAlias
 # from models.context2vec.src.walker_alias import WalkerAlias
-# from src.utils import init_embeddings
 # from models.context2vec.src.utils import init_embeddings
-
-
-# def init_embeddings(x):
-#     x = x.weight.data
-#     value = 2 / (x.size(1) + 1)
-#     x.uniform_(-value, value)
-    
 
 class NegativeSampling(nn.Module):
     def __init__(self, embed_size, counter, num_neg, power, device, pad_idx):
@@ -27,7 +18,6 @@ class NegativeSampling(nn.Module):
         init_embeddings(self.W)
         # self.W.weight.data.zero_()
         self.log_loss = nn.LogSigmoid()
-#         self.sum_log_sampled = t.bmm(noise, input.unsqueeze(2)).sigmoid().log().sum(1).squeeze()
         self.sampler = WalkerAlias(np.power(counter, power))
         
     def negative_sampling(self, shape):

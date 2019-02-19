@@ -5,8 +5,7 @@ import sys
 import argparse
 import cv2
 import editdistance
-# from DataLoader import DataLoader, Batch
-from NewDataLoader import DataLoader, Batch # MY ADD
+from NewDataLoader import DataLoader, Batch 
 from Model import Model, DecoderType
 from SamplePreprocessor import preprocess
 import pandas as pd
@@ -23,10 +22,6 @@ class FilePaths:
 	fnTrain = '../../../../../data/raw/word_level'
 	fnInfer = '../data/test.png'
 	fnCorpus = '../data/corpus.txt'
-
-# word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
-# word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
-
 
 def train(model, loader):
 	"train NN"
@@ -132,7 +127,6 @@ def main():
 	else:
 		word_level_train = pd.read_csv('../../../../../data/preprocessed/word_level_train.csv')
 		word_level_test = pd.read_csv('../../../../../data/preprocessed/word_level_test.csv')
-# 		print(word_level_train.head())
 
 	decoderType = DecoderType.BestPath
 	if args.beamsearch:
@@ -143,7 +137,6 @@ def main():
 	# train or validate on IAM dataset	
 	if args.train or args.validate:
 		# load training data, create TF model
-# 		loader = DataLoader(FilePaths.fnTrain, Model.batchSize, Model.imgSize, Model.maxTextLen)
 		loader = DataLoader(FilePaths.fnTrain, word_level_train, word_level_test, 
                             Model.batchSize, Model.imgSize, Model.maxTextLen)
 

@@ -6,8 +6,6 @@ from inference import Inference
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.metrics import pairwise_distances
 
-# import tensorflow as tf
-# tf.reset_default_graph()
 
 def create_embeddings(file_path='models/embeddings/glove.6B.100d.txt'):
     embeddings = {}
@@ -20,7 +18,6 @@ def create_embeddings(file_path='models/embeddings/glove.6B.100d.txt'):
     return embeddings
 
 
-
 def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=True, only_ocr=False, only_lm=False, 
                                                embedding_file='models/embeddings/glove.6B.100d.txt'):
     
@@ -28,7 +25,10 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
         print('ONLY EVALUATING OCR MODEL FOR {} SAMPLES'.format(subset))
     if only_lm:
         print('ONLY EVALUATING LM MODEL FOR {} SAMPLES'.format(subset))
-    embeddings = create_embeddings(embedding_file)
+    try:
+        embeddings = create_embeddings(embedding_file)
+    except:
+        print('No Embedding File Found')
     stemmer = PorterStemmer()
     lemma = WordNetLemmatizer()
     
@@ -45,32 +45,18 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
     start = time.time()
     for i, (X, y) in enumerate(zip(X_test[:subset], y_true)):
         try:
-    #         print(X)
             X = re.sub(r'<<([^;]*)>>', '[]', ' '.join(X))
-        #     print(y)
             img_path_df = word_level_df_test.loc[word_level_df_test.token == y, 'image_path']
             if len(img_path_df) > 0:
                 N += 1
                 img_path = np.random.choice(img_path_df.values.tolist())
-                # still getting 'unk'
-    #                 y_pred = inference_model.predict(X, img_path)
                 y_pred, lm_pred, ocr_pred, ocr_pred_prob = inference_model.predict(X, img_path, ind_preds=ind_preds, return_topK=50)
-    #                 print(y_pred, lm_pred, ocr_pred)
-    #             print('y_pred', y_pred)
-    #                 print('lm_pred', lm_pred)
-    #             print('ocr_pred', ocr_pred)
                 if only_ocr:
                     y_pred = ocr_pred[0]
                 if only_lm:
-    #                 print(lm_pred)
                     y_pred = lm_pred[0]
-    #             print('Predicted: ', y_pred)
-    #             print('-----------')
-                # exact match accuracy
-    #             print(y_pred)
                 if isinstance(y_pred, tuple):
                     y_pred = y_pred[1]
-    #             print(y_pred)
                 if y_pred.lower() == y:
                     n_correct += 1
                 else:
@@ -96,7 +82,7 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
                 print('processed {} %'.format((i / len_test)*100.0))
         except Exception as e:
             print(str(e))
-            print('bad line')
+            print('No image in dataset')
 
     finish = time.time()
     raw_correct = n_correct / N
@@ -109,7 +95,7 @@ def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=Tr
     print('Average Cosine Similarity {}. Coverage: {}'.format(average_total_similarity, round(converge_counter / N, 3)))
     
     print('Time to evaluate {} sample: {}'.format(subset, finish - start))
-    print('Number of bad lines', bad_lines)
+    print('Number of images not in certain dataset', bad_lines)
     
     return raw_correct, stem_correct, average_total_similarity
 
@@ -127,34 +113,6 @@ if __name__ == '__main__':
     inference_model = Inference(device='cpu')
     # evaluate model 
     raw_correct, stem_correct, average_total_similarity = evaluate_model(X_test, y_test, 
-                                                    word_level_df_test, subset=10000, 
+                                                    word_level_df_test, subset=10, 
                                                 ind_preds=True, only_ocr=False, only_lm=False)
-    
-    
-    
-    
-
-# ONLY OCR
-# Raw correct 0.9086967610303494
-# Stem correct 0.9120122417750574
-# Average Cosine Similarity 0.6765553216851239. Coverage: 0.0
-# Time to evaluate 10000 sample: 5024.438623189926
-# Number of bad lines 2158
-
-
-# ONLY LM
-# Raw correct 0.25975516449885233
-# Stem correct 0.2626880897730171
-# Average Cosine Similarity 4.91581974263811. Coverage: 0.0
-# Time to evaluate 10000 sample: 5024.891078233719
-# Number of bad lines 2158
-
-# Combined
-
-# Raw correct 0.9108645753634277
-# Stem correct 0.916475388931395
-# Average Cosine Similarity 0.6160382933089897. Coverage: 0.0
-# Time to evaluate 10000 sample: 5070.504088401794
-# Number of bad lines 2158
-
-
+     

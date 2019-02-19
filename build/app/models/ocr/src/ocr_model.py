@@ -46,22 +46,12 @@ def ctc_lambda_func(args):
 def get_model(word_level_train, word_level_test, img_w, max_text_len, train_samples=None, test_samples=None, letters=None, 
 												sample_size=None, save_path=None, use_s3=False):
 	
-# 	img_h = 64
-
-# 	# Network parameters
-# 	conv_filters = 16
-# 	kernel_size = (3, 3)
-# 	pool_size = 2
-# 	time_dense_size = 32
-# 	rnn_size = 512
 
 	if K.image_data_format() == 'channels_first':
 		input_shape = (1, img_w, img_h)
 	else:
 		input_shape = (img_w, img_h, 1)
 		
-# 	batch_size = 32
-# 	downsample_factor = pool_size ** 2
 	if sample_size:
 		word_level_train = word_level_train.sample(sample_size)
 	train_tiger = TextImageGenerator(word_level_train, data_path, img_w, img_h, batch_size, 
@@ -87,10 +77,8 @@ def get_model(word_level_train, word_level_test, img_w, max_text_len, train_samp
 
 	conv_to_rnn_dims = (img_w // (pool_size ** 2), (img_h // (pool_size ** 2)) * conv_filters)
 	inner = Reshape(target_shape=conv_to_rnn_dims, name='reshape')(inner)
-#     print(inner.shape)
 	
 	inner = Dense(time_dense_size, activation=act, name='dense1')(inner)
-#     print(inner.shape)
 	
 	gru1 = Bidirectional(GRU(rnn_size, return_sequences=True, kernel_initializer='he_normal', name='gru1'))(inner)
 	gru2 = Bidirectional(GRU(rnn_size, return_sequences=True, kernel_initializer='he_normal', name='gru1'))(gru1)
@@ -105,12 +93,9 @@ def get_model(word_level_train, word_level_test, img_w, max_text_len, train_samp
 	# so CTC loss is implemented in a lambda layer
 	loss_out = Lambda(ctc_lambda_func, output_shape=(1,), name='ctc')([y_pred, labels, input_length, label_length])
 	
-# 	sgd = SGD(lr=0.03, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
 	sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
-#     optimizer = Adam(lr=0.05)
 
 	model = Model(inputs=[input_data, labels, input_length, label_length], outputs=loss_out)
-#     print(model.summary())
 	# the loss calc occurs elsewhere, so use a dummy lambda func for the loss
 	model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=sgd)
 	
@@ -184,7 +169,6 @@ if __name__ == '__main__':
         data_path = 'data/word_level'
         client = boto3.resource('s3')
         bucket = client.Bucket(S3_BUCKET)
-        # print(bucket)
         word_level_train = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TRAIN_PATH))
         word_level_test = pd.read_csv(os.path.join('s3n://', S3_BUCKET, S3_WORD_LEVEL_TEST_PATH))
         word_level_train['image_path'] = word_level_train['image_path'].map(lambda x: data_path + x.split('word_level')[-1])
@@ -192,7 +176,6 @@ if __name__ == '__main__':
         
         word_level_train = subset_data(word_level_train, greater_than_val, less_than_val)
         word_level_test = subset_data(word_level_test, greater_than_val, less_than_val)
-        # suffle test set --- NEEDED??
         word_level_test = word_level_test.sample(frac=1)
 
         samples_train, samples_test = create_s3_samples(bucket, S3_IMAGE_PATH, word_level_train, word_level_test)
@@ -216,69 +199,8 @@ if __name__ == '__main__':
                       save_path='../models/ocr_2_10_lr_01_size_128.h5')
 
     sess.close()
-# SGD 2, 10 -- loss: 7.4965 - val_loss: 6.9792
-# img_w = 128 
-# img_h = 64
-# conv_filters = 16
-# kernel_size = (3, 3)
-# pool_size = 2
-# time_dense_size = 32
-# rnn_size = 512
-# batch_size = 32
-# downsample_factor = pool_size ** 2
-# max_text_len = 10
-# activation = 'relu'
-# learning_rate = 0.03
-# epochs = 1
-# USE_S3 = False
-# greater_than_val = 2
-# less_than_val = 10
 
 
-# SGD 2, 10 -- loss: 2.8930 - val_loss: 12.2240
-# img_w = 128 
-# img_h = 64
-# conv_filters = 16
-# kernel_size = (3, 3)
-# pool_size = 2
-# time_dense_size = 32
-# rnn_size = 512
-# batch_size = 64
-# downsample_factor = pool_size ** 2
-# max_text_len = 10
-# activation = 'relu'
-# learning_rate = 0.025
-# epochs = 1
-# greater_than_val = 2
-# less_than_val = 10
-
-
-
-# saving model to ../models/weights-improvement2-10-01-4.09.hdf5
-# 73616/73616 [==============================] - 6789s 92ms/step - loss: 1.9752 - val_loss: 4.0863
-# Saving model to ../models/ocr_2_10_lr_01_size_256.h5
-
-# USE_S3 = False
-# img_w = 128 
-# img_h = 64
-# conv_filters = 16
-# kernel_size = (3, 3)
-# pool_size = 2
-# time_dense_size = 32
-# rnn_size = 256
-# batch_size = 64
-# downsample_factor = pool_size ** 2
-# max_text_len = 10
-# activation = 'relu'
-# learning_rate = 0.01
-# epochs = 1
-# greater_than_val = 2
-# less_than_val = 10
-
-
-
-# 73615/73616 [============================>.] - ETA: 0s - loss: 2.1937
-# Epoch 00001: val_loss improved from inf to 2.99729, saving model to ../models/weights-improvement2-10-01-3.00.hdf5
 # 73616/73616 [==============================] - 6757s 92ms/step - loss: 2.1937 - val_loss: 2.9973
 # Saving model to ../models/ocr_2_10_lr_01_size_128.h5
 

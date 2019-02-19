@@ -1,3 +1,9 @@
+"""
+The majority of this code is copyright of Harald Scheidl (githubharald)
+The link to the file is here 
+https://github.com/githubharald/SimpleHTR/blob/master/src/Model.py
+"""
+
 from __future__ import division
 from __future__ import print_function
 
