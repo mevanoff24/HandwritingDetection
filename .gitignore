@@ -12,3 +12,7 @@ build/app/models/OCRBeamSearch/model_orig/*
 build/app/models/context2vec_orig/*
 build/app/models/context2vec_orig/models/*
 build/app/models/context2vec_orig/models_103/*
+
+# ignore certain notebooks and checkpoints
+**/*.ipynb_checkpoints/
+build/app/*.ipynb
