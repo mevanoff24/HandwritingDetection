@@ -130,7 +130,7 @@ if __name__ == '__main__':
     word_level_df_test = pd.read_csv('../../data/preprocessed/word_level_test.csv')
 
     # init class 
-    inference_model = Inference(device='cpu')
+    inference_model = Inference(device='cpu', decoding='wordbeamsearch')
     # evaluate model 
     raw_correct, stem_correct, average_total_similarity = evaluate_model(X_test, y_test, 
                                                     word_level_df_test, subset=10, 
