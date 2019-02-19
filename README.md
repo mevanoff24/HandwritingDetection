@@ -100,7 +100,7 @@ docker-compose up
 ```
 https://github.com/mevanoff24/HandwritingDetection.git
 ```
-2. Navigate to the `HandwritingDetection/build` with `cd cd HandwritingDetection/build/` and install all requirement packages 
+2. Navigate to the `HandwritingDetection/build` with `cd HandwritingDetection/build/` and install all requirement packages 
 ```
 pip install -r requirements.txt
 ```
@@ -112,6 +112,11 @@ sh environment.sh
 ```
 bash ./beam_search_local.sh
 ```
+5. You then can go into the `app` directory (`cd app/`) and run
+```
+python run.py
+```
+To start the Flask server at [http://0.0.0.0:5000/](http://0.0.0.0:5000/). Or just play around with the repo. 
 
 
 
