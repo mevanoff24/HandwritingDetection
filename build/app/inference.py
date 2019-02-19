@@ -54,8 +54,17 @@ class Batch:
 
 
 class Inference():
-    def __init__(self, modelfile=None, wordsfile=None, img_width=128, img_height=64, device='cpu'):
-        
+    """
+    Model Inference
+    
+    Attributes:
+        device (str): where to run the code - cpu or gpu
+        img_width (int): desired width of image (only used for orig OCR)
+        img_height (int): desired height of image (only used for orig OCR)
+        stemmer (object): NLTK PorterStemmer class
+        lemma (object): NLTK WordNetLemmatizer class      
+    """
+    def __init__(self, img_width=128, img_height=64, device='cpu'):
         self.device = device
         self.img_width = img_width
         self.img_height = img_height
@@ -67,7 +76,16 @@ class Inference():
         self.lemma = WordNetLemmatizer()
 
         
-    def build_language_model(self, model_dir='models/context2vec/models_103'):  
+    def build_language_model(self, model_dir='models/context2vec/models_103'): 
+        """
+        Builds Language model
+        
+        Args:
+           model_dir (str): path to model directory
+           
+        Returns:
+            None
+        """
         # LANGUAGE MODEL
         modelfile = os.path.join(model_dir, 'model.param')
         wordsfile = os.path.join(model_dir, 'embedding.vec')
@@ -89,8 +107,17 @@ class Inference():
         self.bos_token = config_dict['bos_token']
         self.eos_token = config_dict['eos_token']
 
-
-    def build_beam_ocr_model(self, decoderType = 'wordbeamsearch'):
+    def build_beam_ocr_model(self, decoderType='wordbeamsearch'):
+        #  ------------
+        """
+        Builds Beam Search OCR model
+        
+        Args:
+           decoderType (str): Decoding Type for Beam Search
+           
+        Returns:
+            None
+        """
         # Beam Search OCR model
         decoderType = 'wordbeamsearch'
         if 'beamsearch':
@@ -101,6 +128,9 @@ class Inference():
 
         
     def build_ocr_model(self):
+        """
+        Builds Original OCR model
+        """
         self.sess = tf.Session()
         K.set_session(self.sess)
 
@@ -109,6 +139,17 @@ class Inference():
 
         
     def preprocess_image(self, img_path, img_width, img_height):
+        """
+        Preprocess image for Original OCR model
+        
+        Args:
+           img_path (str): Path to image
+           img_width (int): desired width of image (only used for orig OCR)
+           img_height (int): desired height of image (only used for orig OCR)
+            
+        Returns:
+            img (numpy array): Scaled, formated, and reshaped image as numpy array
+        """
         img = cv2.imread(img_path)
         # grayscale image
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -123,6 +164,15 @@ class Inference():
         
         
     def _decode_batch(self, out):
+        """
+        Best Path decoding for original OCR model
+        
+        Args:
+           out (array): Predictions array 
+            
+        Returns:
+            ret (str): String of maximum likihood word 
+        """
         ret = []
         for j in range(out.shape[0]):
             out_best = list(np.argmax(out[j, 2:], 1))
@@ -136,6 +186,16 @@ class Inference():
 
         
     def _return_split_sentence(self, sentence):
+        """
+        Formats input sentence for language model
+        
+        Args:
+           sentence (str): Input string 
+            
+        Returns:
+            tokens (list): List of tokens
+            target_pos (int): Index of target word 
+        """
         if ' ' not in sentence:
             print('sentence should contain white space to split it into tokens')
             raise SyntaxError
@@ -149,6 +209,19 @@ class Inference():
 
         
     def run_lm_inference_by_user_input(self, sentence, topK=100):
+        """
+        Processes user input sentence
+        Runs user input sentence through model
+        Returns topK predictions and probabilities
+        
+        Args:
+           sentence (str): User input sentence 
+           topK (int): Number of top predictions to return 
+        
+        Returns:
+            output (list): list of tuples [(probability, token), ...]
+        """
+        # Dont return these to user 
         bad_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>', '<unk>']
         # evaluation mode 
         self.lm_model.eval()
@@ -159,7 +232,9 @@ class Inference():
         tokens[target_pos] = self.unk_token
         tokens = [self.bos_token] + tokens + [self.eos_token]
         indexed_sentence = [self.stoi[token] if token in self.stoi else self.stoi[self.unk_token] for token in tokens]
+        # to torch tensor
         input_tokens = torch.tensor(indexed_sentence, dtype=torch.long, device=self.device).unsqueeze(0)
+        # run through model
         topv, topi = self.lm_model.run_inference(input_tokens, target=None, target_pos=target_pos, k=topK)
         output = []  
         for value, key in zip(topv, topi):
@@ -170,7 +245,18 @@ class Inference():
 
     
     def run_beam_ocr_inference_by_user_image(self, img_path):
-        "recognize text in image provided by file path"
+        """
+        Processes user input image BS
+        Runs user input image through model
+        Returns top prediction and probability
+        
+        Args:
+           img_path (str): Path to user uploaded image
+        
+        Returns:
+            recognized (list): Predicted token
+            probability (list): Probability of predictions
+        """
         img = preprocess(cv2.imread(img_path, cv2.IMREAD_GRAYSCALE), Model.imgSize)
         batch = Batch(None, [img])
         (recognized, probability) = self.beam_ocr_model.inferBatch(batch, True)
@@ -178,6 +264,15 @@ class Inference():
 
     
     def run_ocr_inference_by_user_image(self, img):
+        """
+        Returns top prediction from original OCR model
+        
+        Args:
+           img (str): Path to user uploaded image
+        
+        Returns:
+            pred_texts (list): Predicted token
+        """
         net_inp = self.ocr_model.get_layer(name='the_input').input
         net_out = self.ocr_model.get_layer(name='softmax').output
         net_out_value = self.sess.run(net_out, feed_dict={net_inp: img})
@@ -186,6 +281,19 @@ class Inference():
 
     
     def create_features_improved(self, lm_preds, ocr_pred, ocr_prob):
+        """
+        Create features for weighing algorithm using 
+        language and OCR models predictions and probabilities
+        
+        Args:
+           lm_preds (list): list of tuples [(probability, token), ...]
+           ocr_pred (list): Predicted token
+           ocr_prob (list): Probability of predictions
+        
+        Returns:
+            features (dict): features for each model prediction token
+        """
+        # create bins for length
         bins = {
             'small': list(range(0, 3)),
             'small-mid': list(range(2, 6)),
@@ -247,7 +355,7 @@ class Inference():
                 features[word]['last_char_match'] = last_char_match
 
 
-
+                # number of character matches
                 num_chars = 0
                 for char in ocr_pred_lower:
                     if char in word:
@@ -260,6 +368,7 @@ class Inference():
 
 
     def get_weights(self):
+        """Custom weights to assign each feature based on validation set results"""
         weights = {
             'first_char_match':     0.63,
             'last_char_match':      0.62,
@@ -273,6 +382,18 @@ class Inference():
         
 
     def final_scores(self, features, ocr_pred, ocr_prob_threshold, return_topK=None):
+        """
+        Computes final score based on features and weights with some heuristics
+        
+        Args:
+           features (dict): features for each model prediction token
+           ocr_pred (list): OCR Predicted token
+           ocr_prob_threshold (float): Probability threshold to return OCR model prediction
+           return_topK (int): Return topK results 
+        
+        Returns:
+            top_results (str): final predicted token
+        """
         final_scores = {}
 
         for word, feature_dict in features.items():
@@ -287,23 +408,32 @@ class Inference():
             if ocr_prob >= ocr_prob_threshold:
                 return ocr_pred
         weights = self.get_weights()
-    
+        # compute final score
         for word, dic in features.items():
             for feature in weights.keys():
                 features[word].update({feature: (features[word][feature] * weights[feature])})
             final_scores[word] = sum(features[word].values())
-
+        # sort top scores 
         top_results = sorted(final_scores.items(), key=itemgetter(1), reverse=True)
         if return_topK:
             return top_results[:return_topK]
         return top_results[0][0]
 
-    
-    def weigh_function(self):
-        pass
-    
-    
+     
     def predict(self, sentence, img_path=None, ind_preds=None, ocr_prob_threshold=0.01, return_topK=None):
+        """
+        Computes final score based on features and weights with some heuristics
+        
+        Args:
+           sentence (str): User Input string 
+           img_path (str): Path to user uploaded image
+           ind_preds (boolean): Return individual LM and OCR predictions  
+           ocr_prob_threshold (float): Probability threshold to return OCR model prediction
+           return_topK (int): Return topK results 
+        
+        Returns:
+            out (str): final predicted token
+        """
         # if valid image filepath and contains text
         valid_image = os.path.isfile(str(img_path))
         valid_text = False

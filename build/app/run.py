@@ -23,7 +23,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 # load Inference class
-inference_model = Inference(img_width=128, img_height=64, device='cpu')
+inference_model = Inference(device='cpu')
 
 class SubmissionFormLeft(Form):
 	left_text_form = TextAreaField('')
