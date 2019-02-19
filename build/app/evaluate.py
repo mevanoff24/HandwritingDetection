@@ -8,6 +8,7 @@ from sklearn.metrics import pairwise_distances
 
 
 def create_embeddings(file_path='models/embeddings/glove.6B.100d.txt'):
+    """Load Glove Embeddings file"""
     embeddings = {}
 
     with open(file_path) as f:
@@ -20,6 +21,25 @@ def create_embeddings(file_path='models/embeddings/glove.6B.100d.txt'):
 
 def evaluate_model(X_test, y_test, word_level_df_test, subset=None, ind_preds=True, only_ocr=False, only_lm=False, 
                                                embedding_file='models/embeddings/glove.6B.100d.txt'):
+    """
+    Evaluate final model based on 
+    accuracy, stemmed accuracy, word vector similarity
+
+    Args:
+        X_test (numpy 2d-array): Testing data  
+        y_test (numpy 2d-array): True data 
+        word_level_df_test (pandas dataframe):
+        subset (int): Number of data points to evaluate
+        ind_preds (boolean): Return individal predictions from each model
+        only_ocr (boolean): Return predictions from only OCR model 
+        only_lm (boolean): Return predictions from only LM model  
+        embedding_file (str): Word embedding filepath 
+
+    Returns:
+        raw_correct (float): Percentage of fully correct predictions
+        stem_correct (float): Percentage of stemmed correct predictions
+        average_total_similarity (float): Word vector similarity score 
+    """
     
     if only_ocr:
         print('ONLY EVALUATING OCR MODEL FOR {} SAMPLES'.format(subset))
