@@ -23,7 +23,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 # load Inference class
-inference_model = Inference(device='cpu')
+inference_model = Inference(device='cpu', decoding='wordbeamsearch')
 
 class SubmissionFormLeft(Form):
 	left_text_form = TextAreaField('')
@@ -71,10 +71,12 @@ def predict():
         right_text = request.form['right_text_form']       
 
         X = left_text + ' [] ' + right_text
+        
         try:
-            prediction_prob, prediction = inference_model.predict(X, file_url)
+            prediction = inference_model.predict(X, file_url, ocr_prob_threshold=0.85)
         except:
             prediction = 'NO INPUT. TRY AGAIN'
+            
     return render_template('predict.html', left_text=left_text, right_text=right_text, file_url=file_url, 
                             prediction=prediction)
 

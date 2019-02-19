@@ -64,13 +64,14 @@ class Inference():
         stemmer (object): NLTK PorterStemmer class
         lemma (object): NLTK WordNetLemmatizer class      
     """
-    def __init__(self, img_width=128, img_height=64, device='cpu'):
+    def __init__(self, img_width=128, img_height=64, device='cpu', decoding=None):
         self.device = device
         self.img_width = img_width
         self.img_height = img_height
+        self.decoding = decoding
         self.build_language_model()
         # self.build_ocr_model()
-        self.build_beam_ocr_model()
+        self.build_beam_ocr_model(decoding)
     
         self.stemmer = PorterStemmer()
         self.lemma = WordNetLemmatizer()
@@ -107,8 +108,8 @@ class Inference():
         self.bos_token = config_dict['bos_token']
         self.eos_token = config_dict['eos_token']
 
-    def build_beam_ocr_model(self, decoderType='wordbeamsearch'):
-        #  ------------
+
+    def build_beam_ocr_model(self, decoding):
         """
         Builds Beam Search OCR model
         
@@ -119,12 +120,14 @@ class Inference():
             None
         """
         # Beam Search OCR model
-        decoderType = 'wordbeamsearch'
-        if 'beamsearch':
+        if decoding == 'beamsearch':
             decoderType = DecoderType.BeamSearch
-        if 'wordbeamsearch':
+        if decoding == 'wordbeamsearch':
             decoderType = DecoderType.WordBeamSearch
+        else:
+            decoderType = DecoderType.BestPath
         self.beam_ocr_model = Model(open(FilePaths.fnCharList).read(), decoderType, mustRestore=True)
+        
 
         
     def build_ocr_model(self):
@@ -454,8 +457,8 @@ class Inference():
         if not valid_image and not valid_text:
             return 'NO INPUT. TRY AGAIN'
         if not valid_image:
-            out = lm_preds[0]
+            out = lm_preds[0][1]
         if not valid_text:
-            out = ocr_pred
+            out = ocr_pred[0]
         
         return out
