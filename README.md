@@ -102,7 +102,7 @@ https://github.com/mevanoff24/HandwritingDetection.git
 ```
 2. Navigate to the `HandwritingDetection/build` with `cd cd HandwritingDetection/build/` and install all requirement packages 
 ```
-pip install -r requiremnts
+pip install -r build/requirements.txt
 ```
 3. Optionally, download the data from [S3](https://aws.amazon.com/s3/) by running 
 ```
