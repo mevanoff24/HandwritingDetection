@@ -6,6 +6,15 @@ import re
 import xml.etree.ElementTree as ET
 
 def get_structed_data(data_path):
+    """
+    Parse XML file to extract relevant information for model
+
+    Args:
+        data_path (str): Path to data
+
+    Returns: 
+        all_data (dict): Dictionary of filename with text, ids, and pos tag
+    """
     all_data = {}
     for filename in glob(data_path):
         tree = ET.parse(filename)
@@ -27,6 +36,16 @@ def get_structed_data(data_path):
 
 
 def create_dataframe(all_data):
+    """
+    Create dataframe from dictionary with additional features
+    folder, meta, document, 'ids', 'pos_tag'
+
+    Args:
+        all_data (dict): Dictionary of filename with text, ids, and pos tag 
+
+    Returns: 
+        dat (pandas dataframe): DataFrame with features of folder, meta, and document
+    """
     dat = pd.DataFrame(all_data).T.reset_index()
     dat.columns = ['filename', 'meta', 'ids', 'pos_tag']
     dat['folder'] = dat.filename.map(lambda x: x.split('-')[0])
@@ -37,6 +56,18 @@ def create_dataframe(all_data):
 
 
 def main_meta(data_path, save=False, save_path='../../data/preprocessed'):
+    """
+    Parse XML file and creates dataframe. 
+    Calls get_structed_data() and create_dataframe() functions. 
+
+    Args:
+        data_path (str): Path to data
+        save (boolean): Save dataframe
+        save_path (str): Path to save dataframe
+
+    Returns: 
+        None
+    """
     print('Getting data')
     all_data = get_structed_data(data_path)
     print('Creating data')

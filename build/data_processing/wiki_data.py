@@ -18,10 +18,17 @@ def create_data(wiki_path, dataset, available_image_letters, save=False, target_
     Loads and searchs for useable target word (one we have an image for) and saves wiki text dataset
     
     Args:
-    
+        wiki_path (str): Path to wiki dataset
+        dataset (str): Dataset type (train, valid, test)
+        available_image_letters (list): All letters to be used
+        save (boolean): Save dataframe
+        target_sep (list): Tokens used to surround target variable
+        threshold_length (int): Only use target above this word length
+        iteration_threshold (int): Iterations to run before passing on sentence
+        out_path (str): Initial folder to save data
     
     Returns:
-    
+        None 
     """
     dataset_name = wiki_path.split('/')[-1]
     data_path = create_full_path(wikitext2_path, 'train')
@@ -49,7 +56,6 @@ def create_data(wiki_path, dataset, available_image_letters, save=False, target_
                             random_int = random.randint(0, len(split_sent)-1)
                             target = split_sent[random_int]
                             if (len(target) >= threshold_length) and (target in available_image_letters):
-#                                 X.append(split_sent[:random_int] + ['<TARGET>'] + split_sent[random_int+1:])
                                 X.append(split_sent[:random_int] + [''.join([target_sep[0]] + [target] + [target_sep[1]])] 
                                              + split_sent[random_int+1:])
                                 y.append((target, random_int))
@@ -64,7 +70,7 @@ def create_data(wiki_path, dataset, available_image_letters, save=False, target_
                                 bad_lines += 1
                 if N % 5000 == 0:
                     print('processed {} lines'.format(N))
-#                 if N >= 100: break
+                # if N >= 100: break
                 N += 1
         print('number of skipped lines', bad_lines)
     if save:
@@ -76,9 +82,19 @@ def create_data(wiki_path, dataset, available_image_letters, save=False, target_
 
 
 def main_wiki(wikitext_path, dataset, save=False):
+    """
+    Run and save Wiki data
+
+    Args:
+        wikitext_path (str): Path to wiki dataset
+        dataset (str): Dataset type (train, valid, test)
+        save (boolean): Save dataframe
+
+    Returns:
+        None
+    """
     print('Reading word level meta from {}'.format(dataset))
     word_level_meta_path = '../../data/preprocessed/word_level_{}.csv'.format(dataset)
-    # TODO if dataset = 'test' concat test and validation sets. 
     word_level_df = pd.read_csv(word_level_meta_path)
     available_image_letters = word_level_df.token.values.tolist()
     print('first 10 available image letters: ', available_image_letters[:10])
