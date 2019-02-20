@@ -13,11 +13,15 @@ chars = [' ', '!', '"', '#', "'", '(', ')', '*', ',', '-', '.', '/', '&', '+', '
 
 
 def new_word_level_df(word_level_df, data_path):
+    """
+    update path in word_level_df with new data path
+    """
     word_level_df['image_path'] = word_level_df['image_path'].map(lambda x: 
                                                     data_path + x.split('word_level')[-1])
     return word_level_df
 
 def create_samples(word_level_df):
+    """create samples (image path and token)"""
     samples = []
     for path, word in zip(word_level_df.image_path, word_level_df.token):
         samples.append(Sample(word, path))
@@ -39,10 +43,32 @@ class Batch:
 
 
 class DataLoader:
-    "loads data which corresponds to IAM format, see: http://www.fki.inf.unibe.ch/databases/iam-handwriting-database" 
+    """
+    Loads data which corresponds to IAM format, see: http://www.fki.inf.unibe.ch/databases/iam-handwriting-database
+    
+    Attributes: 
+        dataAugmentation (boolean): Apply data augmentation to input images if true
+        currIdx (int): Current row index
+        batchSize (int): Size of training dataset per iteration
+        imgSize (tuple): Height and width of desired image
+        trainSamples (list): Training datsaet [(Sample(word, path)), ...]
+        validationSamples (list): Training datsaet [(Sample(word, path)), ...]
+        trainWords (list): Training text
+        validationSamples (list): Validation text
+        numTrainSamplesPerEpoch (int): Number of training samples per epoch
+        charList (list): List of individual characters
+    """ 
 
     def __init__(self, data_path, word_level_train, word_level_test, batchSize, imgSize, maxTextLen):
-        "loader for dataset at given location, preprocess images and text according to parameters"
+        """
+        Loader for dataset at given location, preprocess images and text according to parameters
+        
+        Args: 
+            data_path (str): Path to dataset
+            word_level_train (pandas dataframe): Training set dataframe
+            word_level_test (pandas dataframe): Testing set dataframe
+            maxTextLen (int): Max text length to use for model
+        """
 
         self.dataAugmentation = False
         self.currIdx = 0
