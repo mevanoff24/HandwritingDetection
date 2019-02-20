@@ -2,6 +2,21 @@ import toml
 
 
 class Config:
+    """
+    Context2vec hyper-parameter configs 
+
+    Attributes:
+        filename (str): Where to write hyper-parameter configs
+        word_embed_size (int): Size of word embedding layer
+        hidden_size (int): Size of hidden layer
+        n_layers (int): Number of layers for LSTM cells
+        dropout (float): Percentage of nodes to drop
+        n_epochs (int): Number of passes through dataset
+        batch_size (int): Size of training dataset per iteration
+        min_freq (int): Minimum frequency for term in dataset
+        ns_power (float): Negative Sampling power -- decrease the probability for more frequent words
+        learning_rate (float): How much to update weights on model 
+    """
     def __init__(self, filename):
         self.filename = filename
         config = toml.load(self.filename)

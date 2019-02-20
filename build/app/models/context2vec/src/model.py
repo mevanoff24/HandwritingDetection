@@ -9,24 +9,53 @@ import math
 # from models.context2vec.src.utils import init_embeddings
 
 def init_embeddings(x):
+    """Initialize embedding weights uniform values"""
     x = x.weight.data
     value = 2 / (x.size(1) + 1)
     x.uniform_(-value, value)
 
 def create_embedding_layer(vocab_size, word_embed_size, pad_idx):
+    """Defines embedding layer"""
     return nn.Embedding(num_embeddings=vocab_size,
                                     embedding_dim=word_embed_size,
                                     padding_idx=pad_idx)
 
 def create_rnn_layer(word_embed_size, hidden_size, n_layers, batch_first, layer_type=nn.LSTM):
+    """Defines RNN layer"""
     return layer_type(input_size=word_embed_size,
                                hidden_size=hidden_size,
                                num_layers=n_layers,
                                batch_first=batch_first) 
 
 class Context2vec(nn.Module):
+    """
+    Context2vec model 
+    
+    Attributes:
+        vocab_size (int): Vocabulary size
+        word_embed_size (int): Size of word embedding layer
+        hidden_size (int): Size of hidden layer
+        n_layers (int): Number of layers for LSTM cells
+        device (int): Device id for GPU
+        inference (boolean): Prediction time or training time
+        rnn_output_size (int): Size of output from RNN
+        l2r_emb (object): left context pyTorch Embedding module 
+        r2l_emb (object): right context pyTorch Embedding module
+        l2r_rnn (object): left context pyTorch RNN module
+        r2l_rnn (object): right context pyTorch RNN module 
+        dropout (object): pyTorch Dropout module
+        criterion (object): NegativeSampling class object
+        MLP (object): Top Model FC Neural Network
+
+    """
     def __init__(self, vocab_size, counter, word_embed_size, hidden_size, n_layers, bidirectional, dropout,
                  pad_idx, device, inference):
+        """
+        Args:
+            counter (list): Frequency of words in text dataset
+            bidirectional (boolean): Use bidirectional RNN if True
+            pad_idx (int): Index of padding token
+        """
 
         super().__init__()
         self.vocab_size = vocab_size
@@ -55,6 +84,7 @@ class Context2vec(nn.Module):
                                                                dropout=dropout)
         
     def forward(self, X, y, target_pos=None):
+        """Forward pass of model"""
         batch_size, seq_len = X.size()
         X_reversed = X.flip(1)[:, :-1]
         X = X[:, :-1]
@@ -80,6 +110,7 @@ class Context2vec(nn.Module):
             return loss 
         
     def run_inference(self, input_tokens, target, target_pos, k=10):
+        """Prediction process for model"""
         context_vector = self.forward(input_tokens, y=None, target_pos=target_pos)
         if target is None:
             topv, topi = ((self.criterion.W.weight*context_vector).sum(dim=1)).data.topk(k)
@@ -92,6 +123,7 @@ class Context2vec(nn.Module):
             return similarity.item()
         
     def norm_embedding_weight(self, embeddings):
+        """Normalize embedding weights"""
         embeddings.weight.data /= torch.norm(embeddings.weight.data, p=2, dim=1, keepdim=True)
         embeddings.weight.data[embeddings.weight.data != embeddings.weight.data] = 0
 
@@ -99,7 +131,18 @@ class Context2vec(nn.Module):
     
         
 class NeuralNet(nn.Module):
+    """
+    Fully Connected top layer model for Context2vec
 
+    Attributes:
+        input_size (int): Input size for model
+        mid_size (int): Hidden layer size 
+        output_size (int): Output_size for model
+        n_layers (int): Number of layers for LSTM cells
+        drop (object): pyTorch Dropout module
+        MLP (object): ModuleList for this model
+        activation_function (str): Non-linear activation function
+    """
     def __init__(self, input_size, mid_size, output_size, n_layers=2, dropout=0.3, activation_function='relu'):
         super().__init__()
         self.input_size = input_size
@@ -134,7 +177,25 @@ class NeuralNet(nn.Module):
     
     
 class NegativeSampling(nn.Module):
+    """
+    Negative Sampling Loss
+
+    Attributes:
+        counter (list): Frequency of words in text dataset
+        num_neg (int): Number of negative samples to draw
+        power (float): Power to decrease the probability for more frequent words
+        device (int): Device id for GPU
+        W (object): pyTorch Embedding module
+        log_loss: (object): pyTorch Log Sigmoid module
+        sampler (object): WalkerAlias class
+
+    """
     def __init__(self, embed_size, counter, num_neg, power, device, pad_idx):
+        """
+        Args:
+            embed_size (int): Size of word embedding layer
+            pad_idx (int): Index of padding token
+        """
         super().__init__()
         self.counter = counter
         self.num_neg = num_neg
@@ -148,9 +209,11 @@ class NegativeSampling(nn.Module):
         self.sampler = WalkerAlias(np.power(counter, power))
         
     def negative_sampling(self, shape):
+        """Negative Sample to tensor"""
         return tensor(self.sampler.sample(shape=shape), dtype=torch.long, device=self.device)
     
     def forward(self, X, context):
+        """Forward pass for Negative Sampling"""
         batch_size, seq_len = X.size()
         embedding = self.W(X)
         pos_loss = self.log_loss((embedding * context).sum(2))
@@ -161,12 +224,13 @@ class NegativeSampling(nn.Module):
         return -(pos_loss + neg_loss).sum()
 
         
-  
-import numpy
-import numpy as np
 
-# Taken from here 
-# https://github.com/chainer/chainer/blob/v5.2.0/chainer/utils/walker_alias.py#L6
+'''
+The class WalkerAlias is taken from the original author of Context2vec
+https://github.com/chainer/chainer/blob/v5.2.0/chainer/utils/walker_alias.py
+'''
+
+import numpy
 
 class WalkerAlias(object):
     """Implementation of Walker's alias method.

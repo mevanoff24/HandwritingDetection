@@ -2,6 +2,7 @@ import argparse
 
 
 def parse_args():
+    """Command line arguments from Context2Vec model"""
     parser = argparse.ArgumentParser(prog='src')
     parser.add_argument('--gpu', '-g', default=0, type=int)
     parser.add_argument('--train-file', '-t', type=str, help='specify input file')

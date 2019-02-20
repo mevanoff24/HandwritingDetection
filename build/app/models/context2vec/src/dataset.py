@@ -5,8 +5,29 @@ from torchtext.data import Field, Dataset, Example, Iterator
 
 
 class WikiDataset:
+    """
+    Dataset Class for Language Model 
+
+    Attributes:
+        sent_dict: (dict): Dictionary ordering input text by length
+        pad_token (str): Padding token character
+        unk_token (str): Unknown token character
+        bos_token (str): Beginning of string token character
+        eos_token (str): End of sentence token character
+        device (int): Device id for GPU
+        sentence_field (Object): pyTorch Field Object with input text
+        sentence_field_id (Object): pyTorch Field Object with input id
+        vocab (dict): Vocab for dataset
+        pad_idx (int): Index value for padding 
+    """
     def __init__(self, X, batch_size, min_freq, device, pad_token='<PAD>', unk_token='<UNK>', 
                                       bos_token='<BOS>', eos_token='<EOS>', seed=100):
+        """
+        Args:
+            X (list): Input text 
+            batch_size (int): Size of training dataset per iteration
+            seed (int): Random State for reproducible results
+        """
         super().__init__() 
         np.random.seed(seed)
         self.sent_dict = self._gathered_by_lengths(X)
@@ -27,10 +48,12 @@ class WikiDataset:
         self.dataset = self._create_dataset(self.sent_dict, X)
     
     def get_raw_sentence(self, X):
+        """Reverse mapping from int to string"""
         return [[self.vocab.itos[idx] for idx in sentence] for sentence in X]   
      
         
     def _gathered_by_lengths(self, X):
+        """Order input text by length of text"""
         lengths = [(index, len(sent)) for index, sent in enumerate(X)]
         lengths = sorted(lengths, key=lambda x: x[1], reverse=True)
 
@@ -46,6 +69,7 @@ class WikiDataset:
         return sent_dict
     
     def _create_dataset(self, sent_dict, X):
+        """Create torchtext dataset"""
         datasets = {}
         _fields = [('sentence', self.sentence_field),
                    ('id', self.sentence_field_id)]
@@ -57,11 +81,12 @@ class WikiDataset:
     
     
     def _get_examples(self, items, fields):
+        """Defines a single training example. Stores each column of the example as an attribute."""
         return [Example.fromlist(item, fields) for item in items]
 
     
     def get_batch_iter(self, batch_size):
-
+        """Iterator for dataset"""
         def sort(data):
             return len(getattr(data, 'sentence'))
 
