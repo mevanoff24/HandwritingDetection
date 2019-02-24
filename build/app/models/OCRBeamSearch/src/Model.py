@@ -130,11 +130,18 @@ class Model:
 # 			wordChars = open('../model/wordCharList.txt').read().splitlines()[0]
 			wordChars = open('models/OCRBeamSearch/model/wordCharList.txt').read().splitlines()[0]
 # 			corpus = open('../data/corpus.txt').read()
-			corpus = open('models/OCRBeamSearch/data/corpus.txt').read()
+# 			corpus = open('../data/wiki2.txt').read()
+# 			corpus = open('models/OCRBeamSearch/data/corpus.txt').read()
+			corpus = open('models/OCRBeamSearch/data/wiki2.txt').read()    
 
 			# decode using the "Words" mode of word beam search
 # 			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, dim=2), 50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))
-			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, axis=2), 50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))
+# 			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, axis=2), 50, 'Words', 0.0, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))
+			self.decoder = word_beam_search_module.word_beam_search(tf.nn.softmax(self.ctcIn3dTBC, axis=2), 50, 'NGrams', 0.01, corpus.encode('utf8'), chars.encode('utf8'), wordChars.encode('utf8'))   
+#Character error rate: 5.915834%. Word accuracy: 83.804348%.
+
+# Character error rate: 3.765387%. Word accuracy: 92.152174%.
+
 
 
 	def setupTF(self):
@@ -146,7 +153,9 @@ class Model:
 
 		saver = tf.train.Saver(max_to_keep=1) # saver saves model to file
 # 		modelDir = '../model/'
-		modelDir = 'models/OCRBeamSearch/model/'        
+		modelDir = 'models/OCRBeamSearch/model/'
+# 		import pdb, os
+# 		print(pdb.set_trace())
 		latestSnapshot = tf.train.latest_checkpoint(modelDir) # is there a saved model?
 		print(latestSnapshot)
 

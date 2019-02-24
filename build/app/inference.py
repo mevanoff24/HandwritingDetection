@@ -410,6 +410,7 @@ class Inference():
             # if OCR model is really confident return OCR model prediction
             if ocr_prob >= ocr_prob_threshold:
                 return ocr_pred
+        # NEXT: if ocr prob is decently high, look for words with small edit distance in LM model
         weights = self.get_weights()
         # compute final score
         for word, dic in features.items():

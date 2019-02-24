@@ -21,7 +21,8 @@ class FilePaths:
 # 	fnTrain = '../data/'
 	fnTrain = '../../../../../data/raw/word_level'
 	fnInfer = '../data/test.png'
-	fnCorpus = '../data/corpus.txt'
+# 	fnCorpus = '../data/corpus.txt'
+	fnCorpus = '../data/wiki2.txt'    
 
 def train(model, loader):
 	"train NN"

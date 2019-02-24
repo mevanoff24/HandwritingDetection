@@ -133,6 +133,6 @@ if __name__ == '__main__':
     inference_model = Inference(device='cpu', decoding='wordbeamsearch')
     # evaluate model 
     raw_correct, stem_correct, average_total_similarity = evaluate_model(X_test, y_test, 
-                                                    word_level_df_test, subset=10, 
-                                                ind_preds=True, only_ocr=False, only_lm=False)
+                                                    word_level_df_test, subset=10000, 
+                                                ind_preds=True, only_ocr=True, only_lm=False)
      
