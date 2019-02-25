@@ -73,7 +73,7 @@ def predict():
         X = left_text + ' [] ' + right_text
         
         try:
-            prediction = inference_model.predict(X, file_url, ocr_prob_threshold=0.85)
+            prediction = inference_model.predict(X, file_url, ocr_prob_threshold=0.10)
         except:
             prediction = 'NO INPUT. TRY AGAIN'
             
