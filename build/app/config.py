@@ -1,6 +1,6 @@
 # Flask Configs
 TMPDIR = 'tmp/'
 PORT = 5000
-DEBUG = True
+DEBUG = False
 TMP_IMG_NAME = 'uploaded.jpg'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
