@@ -7,6 +7,8 @@
 
 Dockerized and AWS hosted Flask app to decipher messy handwriting to predict most likely word choice. You can navigate to the url [here](http://bit.ly/decipherai) to use the deployed application. 
 
+You can see my presentation [here](https://docs.google.com/presentation/d/1zYfLiZooCKe1LT3e8FkTNU39ZUZoNQfaUbTzMXQ1yn4/edit#slide=id.p)
+
 
 ## Motivation for this project
 Have you ever read handwritten text when you came across an indecipherable word? This is a big issue in pharmacies mis-prescribing medicine, maintenance workers mis-communicating results, or even reading lecture notes. The use cases for predicting messy handwriting is far and wide. 
@@ -118,6 +120,7 @@ python run.py
 ```
 To start the Flask server at [http://0.0.0.0:5000/](http://0.0.0.0:5000/). Or just play around with the repo. 
 
+6. This repo also contains a couple of sample images under the `data/samples` directory to upload to the Flask app. 
 
 
 
@@ -135,6 +138,17 @@ toml
 editdistance
 python-Levenshtein
 ```
+You can install all requirement packages from this root directory with the command
+```
+pip install -r build/requirements.txt
+```
+
+
+## Content 
+This section overviews how the repo is built (i.e. the folder structure)
+....
+
+
 
 ## Data
 
