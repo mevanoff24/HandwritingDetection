@@ -143,13 +143,6 @@ You can install all requirement packages from this root directory with the comma
 pip install -r build/requirements.txt
 ```
 
-
-## Content 
-This section overviews how the repo is built (i.e. the folder structure)
-....
-
-
-
 ## Data
 
 [IAM Handwriting Database](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database)
@@ -199,6 +192,149 @@ python main.py --train --uses3
 | Individual Language Model  | Wiki-103  | 0.260  | 0.263  |  4.915 |
 |  Individual OCR Beam Search | Wiki-103  | 0.908  | 0.912  | 0.677  |
 | Weighted LM + OCR Beam Search  | Wiki-103  | 0.911  | 0.916  | 0.616  |
+
+
+-----
+
+
+## Content 
+This section overviews how the repo is built (i.e. the folder structure)
+
+The most important directory is the`models` directory (`build/app/models`) where each individual model lives
+- Language Model -- `context2vec`
+- Optical Character Recognition Beam Search -- `OCRBeamSearch`
+This is where all the training takes place
+
+Inference takes place in the `inference.py` file (`build/app/inference.py`)
+
+```bash
+├── build
+│   ├── app
+│   │   ├── config.py
+│   │   ├── evaluate.py
+│   │   ├── inference.py
+│   │   ├── __init__.py
+│   │   ├── models
+│   │   │   ├── all_models.py
+│   │   │   ├── context2vec
+│   │   │   │   ├── config.toml
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── logs
+│   │   │   │   │   └── logs.txt
+│   │   │   │   ├── main.py
+│   │   │   │   └── src
+│   │   │   │       ├── args.py
+│   │   │   │       ├── config.py
+│   │   │   │       ├── dataset.py
+│   │   │   │       ├── __init__.py
+│   │   │   │       ├── model.py
+│   │   │   │       ├── mscc_eval.py
+│   │   │   │       ├── negative_sampling.py
+│   │   │   │       ├── utils.py
+│   │   │   │       └── walker_alias.py
+│   │   │   ├── __init__.py
+│   │   │   ├── ocr
+│   │   │   │   └── src
+│   │   │   │       ├── args.py
+│   │   │   │       ├── config.py
+│   │   │   │       ├── generator.py
+│   │   │   │       ├── ocr_model.py
+│   │   │   │       └── spellchecker.py
+│   │   │   └── OCRBeamSearch
+│   │   │       ├── data
+│   │   │       │   ├── analyze.png
+│   │   │       │   ├── checkDirs.py
+│   │   │       │   ├── corpus.txt
+│   │   │       │   ├── Get IAM training data.txt
+│   │   │       │   ├── pixelRelevance.npy
+│   │   │       │   ├── test.png
+│   │   │       │   ├── translationInvariance.npy
+│   │   │       │   ├── translationInvarianceTexts.pickle
+│   │   │       │   ├── wiki2.txt
+│   │   │       │   └── words.txt
+│   │   │       ├── LICENSE.md
+│   │   │       ├── model
+│   │   │       │   ├── accuracy.txt
+│   │   │       │   ├── charList.txt
+│   │   │       │   ├── checkpoint
+│   │   │       │   ├── model.zip
+│   │   │       │   └── wordCharList.txt
+│   │   │       ├── model_new
+│   │   │       │   ├── accuracy.txt
+│   │   │       │   ├── charList.txt
+│   │   │       │   └── wordCharList.txt
+│   │   │       └── src
+│   │   │           ├── main.py
+│   │   │           ├── Model.py
+│   │   │           ├── NewDataLoader.py
+│   │   │           ├── SamplePreprocessor.py
+│   │   │           └── TFWordBeamSearch.so
+│   │   ├── run.py
+│   │   ├── static
+│   │   │   ├── css
+│   │   │   │   ├── bootstrap.css
+│   │   │   │   └── my_css.css
+│   │   │   ├── images
+│   │   │   │   └── detective.jpeg
+│   │   │   └── js
+│   │   │       ├── bootstrap.bundle.js
+│   │   │       └── bootstrap.js
+│   │   ├── templates
+│   │   │   ├── add_image.html
+│   │   │   ├── _form_helpers.html
+│   │   │   └── predict.html
+│   │   └── utils.py
+│   ├── beam_search_install.ipynb
+│   ├── beam_search_local.sh
+│   ├── beam_search.sh
+│   ├── data_processing
+│   │   ├── image_meta.py
+│   │   ├── wiki_data.py
+│   │   └── word_level.py
+│   ├── Dockerfile
+│   ├── environment.sh
+│   ├── notebooks
+│   │   ├── DatasetCreation.ipynb
+│   │   ├── Evaluation.ipynb
+│   │   ├── FullMeta.ipynb
+│   │   ├── keras.ipynb
+│   │   ├── LM_model.ipynb
+│   │   ├── Meta.ipynb
+│   │   ├── NewOCR.ipynb
+│   │   ├── OCR_model.ipynb
+│   │   ├── Pipeline.ipynb
+│   │   ├── __pycache__
+│   │   ├── s3_OCR.ipynb
+│   │   ├── tensract.ipynb
+│   │   ├── visuals.py
+│   │   └── wiki_dataset.ipynb
+│   └── requirements.txt
+├── configs
+│   └── example_config.yml
+├── data
+│   ├── preprocessed
+│   │   ├── example.txt
+│   │   ├── meta.csv
+│   │   ├── meta.json
+│   │   ├── meta_json.csv
+│   │   ├── meta_json.json
+│   │   ├── word_level_meta.csv
+│   │   ├── word_level_test.csv
+│   │   └── word_level_train.csv
+│   ├── processed
+│   │   └── example_output.txt
+│   └── samples
+│       ├── c03-096f-03-05.png
+│       └── c03-096f-07-05.png
+├── docker-compose.yml
+├── LICENSE
+├── README.md
+├── static
+│   └── pipeGIF.gif
+└── tests
+    └── README.md
+```
+
 
 
 -----
