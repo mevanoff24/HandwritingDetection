@@ -1,5 +1,6 @@
 # Decipher
 
+<img src="build/app/static/images/detective.jpeg" alt="drawing" width="100"/>
 
 
 
