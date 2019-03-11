@@ -6,7 +6,7 @@
 
 ## Overview
 
-Dockerized and AWS hosted Flask app to decipher messy handwriting to predict most likely word choice. You can navigate to the url [here](http://bit.ly/decipherai) to use the deployed application. 
+Dockerized and AWS hosted Flask app to decipher messy handwriting to predict most likely word choice. Please [contact me](mailto:mevanoff24@gmail.com) if you need to use the deployed application, since the EC2 instance is currently down.  
 
 You can see my presentation [here](https://docs.google.com/presentation/d/1zYfLiZooCKe1LT3e8FkTNU39ZUZoNQfaUbTzMXQ1yn4/edit#slide=id.p)
 
